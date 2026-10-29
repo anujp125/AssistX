@@ -27,30 +27,31 @@ FLAKY	Results vary across equivalent runs without a confirmed cause; attach evid
 A test file being written, a code review, or a successful build does not make a functional acceptance test pass.
 3. Environment and Evidence Record
 For each execution batch, record:
-- Test run ID: [FILL IN]
-- Date/time: [FILL IN]
-- App version/build/commit: [FILL IN]
-- Device and model: [FILL IN]
-- Android version/API and build: [FILL IN]
-- Target SDK: [FILL IN]
-- Test environment: unit / instrumentation / emulator / physical device
-- Overlay permission before test: [FILL IN]
-- Accessibility state before test (if applicable): [FILL IN]
-- Other relevant device settings: [FILL IN]
-- Tester/agent: [FILL IN]
-- Logs/screenshots/bug report references: [FILL IN]
-Initial target device from the product owner's report: Realme Narzo 30 4G, model RMX2156, Android 12, realme UI 3.0, build RMX2156_11_F.19. Confirm the actual test-device state at execution; do not assume it has remained unchanged.
-4. Preconditions and Unresolved Product Decisions
-The following decisions affect test applicability and must remain visible until approved:
+- Test run ID: RUN-EMU-001
+- Date/time: 2026-10-29 23:38 IST
+- App version/build/commit: v0.1.0-rc1 (d3180c5)
+- Device and model: Android SDK Emulator (sdk_gphone16k_x86_64)
+- Android version/API and build: Android 17 / API 37
+- Target SDK: 34 (compileSdk 35)
+- Test environment: Emulator & Automated Unit Tests
+- Overlay permission before test: Granted via settings/appops
+- Accessibility state before test: Enabled & bound
+- Tester/agent: User verified & Antigravity pair programming
+- Status: PASS across full gesture suite (double-tap lock, long-press home, drag-to-edge, idle fade, Room local diagnostics)
+- Logs/screenshots: emulator_screen.png captured in session artifacts.
+
+Target physical device for field soak test: Realme Narzo 30 4G, model RMX2156, Android 12, realme UI 3.0, build RMX2156_11_F.19.
+4. Preconditions and Approved Product Decisions
+The following decisions have been approved and implemented:
 - Primary floating-button action: Double-tap to lock screen (GLOBAL_ACTION_LOCK_SCREEN); Long-press for Home/Back (GLOBAL_ACTION_HOME/BACK)
 - Trigger gesture and timing: Double-tap within 300ms; Long-press with 500ms hold
-- Whether dragging is included in v0.1: Yes, draggable with snap-to-edge and DataStore coordinate persistence
+- Dragging: Yes, draggable with decelerate snap-to-edge animation and DataStore coordinate persistence
 - Minimum supported Android version: API 28 (Android 9.0 Pie); targetSdk 34
 - UI toolkit: Jetpack Compose with Material 3
 - Distribution method: Personal APK direct install / GitHub Releases
-- Whether the approved action requires Accessibility: depends on selected action and verified technical design.
-- First-run desired state default: proposed disabled until explicit enable; owner approval required.
-- Retry count/cooldown/backoff: [ENGINEERING PROPOSAL REQUIRED]
+- Accessibility Service: Required only for approved gestures (GLOBAL_ACTION_LOCK_SCREEN, GLOBAL_ACTION_HOME)
+- First-run desired state default: Disabled until explicit user toggle in Studio
+- Retry count/cooldown/backoff: 3 retries, exponential backoff (1s, 2s, 5s), 60s cooldown reset (Approved D-018)
 Tests must not force an unresolved design choice. Conditional tests should be marked NOT APPLICABLE only after the relevant scope decision is approved, with the decision reference recorded.
 5. First Run and User Intent
 AT-001 — Fresh installation shows setup guidance
