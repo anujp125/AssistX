@@ -15,6 +15,10 @@ class AssistAccessibilityService : AccessibilityService() {
 
         private var instance: AssistAccessibilityService? = null
 
+        fun setConnectedForTesting(connected: Boolean) {
+            _isConnected.value = connected
+        }
+
         fun lockScreen(): Boolean {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 instance?.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN) ?: false

@@ -8,6 +8,8 @@ import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import com.nudge.assist.accessibility.ActionExecutorContract
+import com.nudge.assist.accessibility.AndroidActionExecutor
 import com.nudge.assist.data.OverlayPreferences
 import com.nudge.assist.data.UserPreferencesContract
 import com.nudge.assist.service.AssistAccessibilityService
@@ -33,6 +35,7 @@ class OverlayManager(
     private val stateCoordinator: StateCoordinator,
     private val permissionAdapter: OverlayPermissionAdapter = AndroidOverlayPermissionAdapter(),
     private val preferences: UserPreferencesContract = OverlayPreferences(context),
+    private val actionExecutor: ActionExecutorContract = AndroidActionExecutor(),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) : OverlayManagerContract {
 
@@ -164,7 +167,7 @@ class OverlayManager(
 
     private fun handleDoubleTap() {
         // Primary Action: Lock Screen via Accessibility Service
-        val locked = AssistAccessibilityService.lockScreen()
+        val locked = actionExecutor.lockScreen()
         if (!locked) {
             // Note: If accessibility is unlinked, status remains truthful in coordinator
         }
@@ -172,7 +175,7 @@ class OverlayManager(
 
     private fun handleLongPress() {
         // Navigation Action: Go Home / Back via Accessibility Service
-        AssistAccessibilityService.performHome()
+        actionExecutor.performHome()
     }
 
     private fun handleDragMoved(deltaX: Float, deltaY: Float) {
