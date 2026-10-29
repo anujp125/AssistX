@@ -13,6 +13,7 @@ interface ActionExecutorContract {
     fun performHome(): Boolean
     fun performBack(): Boolean
     fun openVolumePanel(): Boolean
+    fun openPowerDialog(): Boolean
 }
 
 class AndroidActionExecutor(private val context: Context? = null) : ActionExecutorContract {
@@ -20,6 +21,7 @@ class AndroidActionExecutor(private val context: Context? = null) : ActionExecut
     override fun takeScreenshot(): Boolean = AssistAccessibilityService.takeScreenshot()
     override fun performHome(): Boolean = AssistAccessibilityService.performHome()
     override fun performBack(): Boolean = AssistAccessibilityService.performBack()
+    override fun openPowerDialog(): Boolean = AssistAccessibilityService.openPowerDialog()
     override fun openVolumePanel(): Boolean {
         return try {
             val audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager

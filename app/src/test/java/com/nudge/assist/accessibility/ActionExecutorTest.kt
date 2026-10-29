@@ -10,7 +10,8 @@ class FakeActionExecutor(
     var shouldScreenshotSucceed: Boolean = true,
     var shouldHomeSucceed: Boolean = true,
     var shouldBackSucceed: Boolean = true,
-    var shouldVolumeSucceed: Boolean = true
+    var shouldVolumeSucceed: Boolean = true,
+    var shouldPowerSucceed: Boolean = true
 ) : ActionExecutorContract {
 
     var lockScreenCallCount = 0
@@ -18,6 +19,7 @@ class FakeActionExecutor(
     var performHomeCallCount = 0
     var performBackCallCount = 0
     var openVolumePanelCallCount = 0
+    var openPowerDialogCallCount = 0
 
     override fun lockScreen(): Boolean {
         lockScreenCallCount++
@@ -42,6 +44,11 @@ class FakeActionExecutor(
     override fun openVolumePanel(): Boolean {
         openVolumePanelCallCount++
         return shouldVolumeSucceed
+    }
+
+    override fun openPowerDialog(): Boolean {
+        openPowerDialogCallCount++
+        return shouldPowerSucceed
     }
 }
 
@@ -100,5 +107,16 @@ class ActionExecutorTest {
         executor.shouldVolumeSucceed = false
         assertFalse(executor.openVolumePanel())
         assertEquals(2, executor.openVolumePanelCallCount)
+    }
+
+    @Test
+    fun testOpenPowerDialogExecution() {
+        val executor = FakeActionExecutor(shouldPowerSucceed = true)
+        assertTrue(executor.openPowerDialog())
+        assertEquals(1, executor.openPowerDialogCallCount)
+
+        executor.shouldPowerSucceed = false
+        assertFalse(executor.openPowerDialog())
+        assertEquals(2, executor.openPowerDialogCallCount)
     }
 }

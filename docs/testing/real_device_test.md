@@ -98,3 +98,17 @@ This document specifies the real-device test execution matrix for physical hardw
   - **Home (Regression)**: PASS — 500ms long-press navigates directly to Realme Home launcher (com.android.launcher/.Launcher).
   - **Drag & Edge Snap (Regression)**: PASS — smooth drag and 250ms snap to edge preserved.
   - **Idle Fade (Regression)**: PASS — dims to idle opacity after 3s inactivity.
+
+
+### Real-Device Run Log: RD-RUN-003 (Sprint F-05 Enlarged Popout & Power Action)
+- **Date/Time**: 2026-10-30 01:34 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-05)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Enlarged popup footprint (192dp x 64dp) and Power button (GLOBAL_ACTION_POWER_DIALOG)
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Enlarged 3-Action Popout**: PASS — spacious thumb-friendly pill capsule (192dp width x 64dp height). All 3 action columns provide comfortable 64dp touch targets.
+  - **Power Button Differentiator**: PASS — highlighted with vivid coral red IEC 5009 power symbol (#FF5A5F), soft circular tinted backdrop (#2DFF4B4B), and bold text label.
+  - **Native Power / Reboot Dialog**: PASS — tapping [ Power ] dismisses popout and invokes GLOBAL_ACTION_POWER_DIALOG (openPowerDialog performed, result: true). The official realme UI power screen appears with Emergency, Restart, Power off, and Lock screen cards.
+  - **Dialog Dismissal**: PASS — pressing back or tapping outside returns cleanly to home launcher without residue.

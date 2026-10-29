@@ -37,6 +37,12 @@ class AssistAccessibilityService : AccessibilityService() {
             }
         }
 
+        fun openPowerDialog(): Boolean {
+            val res = instance?.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG) ?: false
+            android.util.Log.i("AssistX", "openPowerDialog performed, result: $res")
+            return res
+        }
+
         fun performHome(): Boolean {
             return instance?.performGlobalAction(GLOBAL_ACTION_HOME) ?: false
         }

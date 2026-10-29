@@ -574,6 +574,15 @@ Sprint F-04 — Final Hardware Regression & Release Packaging
 - Deliverables: Verified 4-action hardware run on physical Realme Narzo 30 4G (RMX2156, realme UI 3.0).
 - Tests/evidence: Live hardware regression run RD-RUN-002 (Double-tap lock: mWakefulness=Asleep; Long-press: Home launcher; Single-tap + Shot: GLOBAL_ACTION_TAKE_SCREENSHOT; Single-tap + Vol: adjustSuggestedStreamVolume). 51 unit tests passing (100%), assembleRelease verified.
 - Status: Passed
+
+Sprint F-05 — Power Menu Action & Popout Enlargement
+- Priority: P0
+- Depends on: F-04
+- Objective: Enlarge popup footprint (192dp x 64dp) and add a specially differentiated Power button triggering the native OS shutdown/restart dialog.
+- Capability: AccessibilityService.GLOBAL_ACTION_POWER_DIALOG (API 21+)
+- Deliverables: 3-item ActionPopoutView with IEC 5009 power icon, vivid coral red accent, and circular backdrop glow; AssistAccessibilityService.openPowerDialog().
+- Tests/evidence: ActionExecutorTest passing (52 unit tests total, 100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-003: tap Power -> native Realme UI Power/Restart dialog displayed).
+- Status: Passed
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

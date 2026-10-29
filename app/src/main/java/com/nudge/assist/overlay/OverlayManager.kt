@@ -213,8 +213,8 @@ class OverlayManager(
         val screenWidth = displayMetrics.widthPixels
         val screenHeight = displayMetrics.heightPixels
 
-        val popoutWidth = (116 * density).toInt()
-        val popoutHeight = (54 * density).toInt()
+        val popoutWidth = (192 * density).toInt()
+        val popoutHeight = (64 * density).toInt()
         val margin = (10 * density).toInt()
         val btnSize = buttonSizePx
 
@@ -261,6 +261,11 @@ class OverlayManager(
                 override fun onVolumeClicked() {
                     dismissPopout()
                     actionExecutor.openVolumePanel()
+                }
+
+                override fun onPowerClicked() {
+                    dismissPopout()
+                    actionExecutor.openPowerDialog()
                 }
 
                 override fun onDismissRequested() {
