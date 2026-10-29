@@ -13,8 +13,8 @@
 |:---|:---|:---|:---:|:---|
 | **D-001** | App Identity | Name: **AssistX** (code-name: Nudge). Package: `com.nudge.assist` (debug suffix `.debug`) | **Approved** | Clean naming, unique package identity. |
 | **D-002** | Target Architecture | **Single-module native Android** (`:app`), native Kotlin, Jetpack Compose | **Approved** | Zero unnecessary multi-module overhead for MVP. |
-| **D-003** | Primary Action 1 | **Double-tap to lock screen** via `GLOBAL_ACTION_LOCK_SCREEN` | **Approved** | Instant hardware power button replacement (<100ms). |
-| **D-004** | Primary Action 2 | **Long-press (500ms) to return Home** via `GLOBAL_ACTION_HOME` | **Approved** | Standard accessibility assistive touch gesture. |
+| **D-003** | Core Action 1 | **Double-tap to lock screen** via `GLOBAL_ACTION_LOCK_SCREEN` | **Approved** | Instant hardware power button replacement (<100ms). |
+| **D-004** | Core Action 2 | **Long-press (500ms) to return Home** via `GLOBAL_ACTION_HOME` | **Approved** | Standard accessibility assistive touch gesture. |
 | **D-005** | Drag & Interaction | **Draggable with decelerating snap-to-edge** animation and DataStore persistence | **Approved** | Keeps overlay out of the user's primary workspace. |
 | **D-006** | Idle Appearance | **Idle opacity fade to 40%** after 3 seconds of inactivity | **Approved** | Prevents visual obstruction of content underneath. |
 | **D-007** | Target Hardware | **Realme Narzo 30 4G** (`RMX2156`, realme UI 3.0 / Android 12, Build `F.19`) | **Approved** | Primary daily driver test device. |
@@ -34,12 +34,19 @@
 
 ---
 
-## 2. Feature Roadmap Extension Decisions (Sprints F-02 to F-06)
+## 2. Strictly Scoped 4-Feature Set
+
+Per owner decision on 2026-10-30, the scope is strictly restricted to 4 essential features:
+1. **Screen Off** (`GLOBAL_ACTION_LOCK_SCREEN` — Implemented & Verified)
+2. **Home** (`GLOBAL_ACTION_HOME` — Implemented & Verified)
+3. **Screenshot** (`GLOBAL_ACTION_TAKE_SCREENSHOT` — Next Sprint F-02)
+4. **Volume** (`AudioManager.adjustStreamVolume` with `FLAG_SHOW_UI` — Sprint F-03)
+
+*All other features (Back button, Recent Apps task switcher, custom action menus) are removed from the roadmap.*
 
 | Feature Sprint | Capability | Approved Platform Design | Notes / Constraints |
 |:---|:---|:---|:---|
-| **F-02: Back Action** | Dispatch Back key | `AccessibilityService.GLOBAL_ACTION_BACK` | Native API 28+ call; requires interaction mapping approval (e.g. single tap or menu). |
-| **F-03: Recent Apps** | Open Recents UI | `AccessibilityService.GLOBAL_ACTION_RECENTS` | Opens native system overview. No hidden background process inspection. |
-| **F-04: Screenshot** | Capture screen | `AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT` | Native system screenshot (API 28+). No media projection dialogs or storage risks. |
-| **F-05: Volume Control** | Adjust volume | `AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)` | Opens native system volume slider without custom floating bars. |
-| **F-06: Action Menu** | Multi-action access | Expandable circular / grid Action Panel on tap | Preserves double-tap/long-press shortcuts while exposing secondary actions. |
+| **F-01: Baseline Audit** | Baseline validation & regression suite | Complete baseline verification | **Passed** (49 unit tests, hardware verified). |
+| **F-02: Screenshot Action** | Capture screen | `AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT` | Native system screenshot (API 28+). No media projection dialogs or storage risks. |
+| **F-03: Volume Control** | Adjust volume | `AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)` | Opens native system volume slider without custom floating bars. |
+| **F-04: Hardware Regression** | Full verification on target phone | 4-feature test run on Realme Narzo 30 4G | Real-device validation of the final 4-feature build. |

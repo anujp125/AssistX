@@ -538,8 +538,8 @@ NUDGE-034 — Complete release checklist and owner sign-off
 - Status: Passed
 S8 exit gate: No public/private distribution occurs until the owner approves the target artifact, packaging, signing, documentation, and known limitations. (Passed)
 
-15. Feature Sprints Roadmap (Post-v0.1 MVP Extension)
-Governed by NUDGE_AGENT_EXECUTION_PLAYBOOK.md.
+15. Feature Sprints Roadmap (Strictly Scoped 4-Feature Set)
+Governed by NUDGE_AGENT_EXECUTION_PLAYBOOK.md. Per owner decision on 2026-10-30, scope is strictly limited to 4 features: Screen Off, Home, Screenshot, and Volume. All other candidate actions (Back button, Recent Apps, complex menus) are removed.
 
 Sprint F-01 — Baseline Audit and Regression Harness
 - Priority: P0 (Mandatory first sprint)
@@ -549,50 +549,24 @@ Sprint F-01 — Baseline Audit and Regression Harness
 - Tests/evidence: 49 automated unit tests passing (100%), verified live on Realme Narzo 30 4G (RD-RUN-001) and emulator (RUN-EMU-001).
 - Status: Passed
 
-Sprint F-02 — Dedicated Back Action
+Sprint F-02 — Screenshot Capture Action
 - Priority: P0
 - Depends on: F-01
-- Objective: Add a dedicated Back action to the floating button interaction model.
-- Capability: AccessibilityService.GLOBAL_ACTION_BACK
+- Objective: Trigger native system screenshot capture with zero media projection dialogs.
+- Capability: AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT (API 28+)
 - Status: Ready for Run
 
-Sprint F-03 — Recent Apps Switcher
+Sprint F-03 — Volume Controls
 - Priority: P0
 - Depends on: F-02
-- Objective: Add a user-invoked path to Android's native Recents overview UI.
-- Capability: AccessibilityService.GLOBAL_ACTION_RECENTS
-- Status: Planned
-
-Sprint F-04 — Screenshot Capture
-- Priority: P0
-- Depends on: F-03
-- Objective: Trigger native system screenshot action with zero media projection dialogs.
-- Capability: AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT (API 28+)
-- Status: Planned
-
-Sprint F-05 — Volume Controls
-- Priority: P1
-- Depends on: F-04
 - Objective: Trigger official system volume slider on user request.
 - Capability: AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)
 - Status: Planned
 
-Sprint F-06 — Floating-Button Action Menu / Interaction Redesign
+Sprint F-04 — Final Hardware Regression & Release Packaging
 - Priority: P0
-- Depends on: F-02, F-03, F-04, F-05
-- Objective: Provide an expandable, accessible action panel for secondary actions without accidental triggers.
-- Status: Planned
-
-Sprint F-07 — Reliability and Recovery Hardening
-- Priority: P0
-- Depends on: F-06
-- Objective: Harden permission revoke detection, OEM lifecycle restarts, and diagnostic pruning under stress.
-- Status: Planned
-
-Sprint F-08 — Accessibility, Usability, and Final Hardware Regression
-- Priority: P0
-- Depends on: F-07
-- Objective: Full physical-device regression across all actions on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
+- Depends on: F-03
+- Objective: Full physical-device regression across the 4 approved actions (Screen Off, Home, Screenshot, Volume) on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
 - Status: Planned
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
