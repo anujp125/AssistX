@@ -252,3 +252,35 @@ This document specifies the real-device test execution matrix for physical hardw
       - Tap Circle 1 (Volume at y=1335): `openVolumePanel executed successfully` (PASS)
       - Tap Circle 2 (Power at y=1143): `openPowerDialog performed, result: true` (PASS)
       - Tap Outside Scrim: `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)
+
+
+### Real-Device Run Log: RD-RUN-010 (Sprint F-12 Custom User Iconography Integration & Dynamic Recoloring)
+- **Date/Time**: 2026-10-30 03:30 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-12)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint F-12 — Direct integration of user-provided iconography assets (Screenshot, Volume, Power), dynamic PorterDuff recoloring (pure white for Screenshot/Volume, vivid coral-red `#F87171` for Power), and 40%–50% button area scaling (24.5dp span inside 54dp circle).
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Asset Integration & High-Fidelity Rendering**:
+    - Extracted and supersampled 4x (192x192) user-provided assets:
+      - Screenshot: Smartphone with screen crop corner and home button dot (`ic_action_screenshot.png`).
+      - Volume: Speaker silhouette with dual rounded soundwaves (`ic_action_volume.png`).
+      - Power: IEC 5009 power symbol inside circular ring (`ic_action_power.png`).
+    - Decoded and rendered via `ActionPopoutView` custom draw routines with hardware acceleration enabled.
+  - **Dynamic Theme Recoloring**:
+    - Screenshot & Volume: `PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)` on obsidian dark background (`#1A1A24`) with subtle white accent rim.
+    - Power: `PorterDuffColorFilter(Color.rgb(248, 113, 113), PorterDuff.Mode.SRC_IN)` on obsidian dark background (`#1A1A24`) with soft coral-red accent rim (`#EF4444`, 80/255 alpha).
+  - **40%–50% Button Space Sizing**:
+    - Target icon span set to `24.5dp` inside `54dp` button circle (`45.4%` span ratio, cleanly inside the 40%–50% target).
+    - Negative space and margins visually balanced; zero overcrowding or sharp edge artifacts.
+  - **Adaptive Arrangement & Touch Hit-Testing (Real Hardware)**:
+    - Downwards Arrangement:
+      - Tap Circle 0 (Screenshot at y=1085): `takeScreenshot performed, result: true`, `OplusScreenshotManagerService` invoked (PASS)
+      - Tap Circle 1 (Volume at y=1271): `openVolumePanel executed successfully`, `AudioManager: adjustSuggestedStreamVolume` invoked (PASS)
+      - Tap Circle 2 (Power at y=1457): `openPowerDialog performed, result: true`, `GlobalActionsDialog` opened (PASS)
+    - Upwards Arrangement:
+      - Dragged button to bottom screen (`y = 1899px`), tapped button -> expanded **UPWARDS** with strict 12dp margin.
+      - User icons rendered crisply in upward stack.
+    - Dismissal & Scrim:
+      - Tap outside popout circle consumed touch and cleanly dismissed popout window without triggering background app elements.

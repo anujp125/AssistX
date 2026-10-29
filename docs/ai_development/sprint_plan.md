@@ -632,6 +632,14 @@ Sprint F-11 - Strict Popout Margin & Adaptive Up/Down Arrangement
 - Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-009: verified exact 12dp strict margin, downwards expansion at upper screen, upwards expansion at lower screen with zero collision, hit-testing on all actions in both directions).
 - Status: Passed
 
+Sprint F-12 - Custom User Iconography Integration & Dynamic Recoloring
+- Priority: P0
+- Depends on: F-11
+- Objective: Integrate 3 user-provided custom iconography assets (Screenshot, Volume, Power), dynamically tint them using PorterDuff color filtering (crisp white for Screenshot and Volume, vivid coral red #F87171 for Power), and calibrate their scale to acquire 40%–50% of the popup buttons (24.5dp span within 54dp circle).
+- Deliverables: High-resolution drawables (`ic_action_screenshot.png`, `ic_action_volume.png`, `ic_action_power.png`), updated `ActionPopoutView.kt` with bitmap decoding, `PorterDuffColorFilter` dynamic tinting, animated progress scaling, and negative space balancing.
+- Tests/evidence: 52 unit tests passing (100% PASS), clean assembleDebug and assembleRelease builds, verified live on physical Realme Narzo 30 4G (RD-RUN-010: visual verification of white/coral-red icons at 45% button scale, touch hit-testing on Screenshot, Volume, and Power dialogs, downward and upward adaptive layouts).
+- Status: Passed
+
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

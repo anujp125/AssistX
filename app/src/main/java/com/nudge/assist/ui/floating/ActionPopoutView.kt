@@ -2,10 +2,14 @@ package com.nudge.assist.ui.floating
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
@@ -13,16 +17,16 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.OvershootInterpolator
+import com.nudge.assist.R
 import kotlin.math.hypot
 
 /**
- * 3 separate circular popout buttons expanding vertically downwards from the floating button.
- * - Minimalist textless design with smooth, organic icons (~20-21dp span, 10% smaller).
- * - Screenshot icon: smooth rounded viewfinder brackets framing a soft-cornered smartphone silhouette.
- * - Volume icon: smooth flowing curves and Bezier flared horn with rounded sound wave arcs.
- * - Power icon: smooth rounded 280° arc with rounded stem dome caps.
- * - Dark mode base with refined low-opacity white accents (Shot/Vol) and soft coral-red accents (Power).
- * - Subtle, elegant accent styling without overly bold/garish color saturations.
+ * 3 separate circular popout buttons expanding vertically downwards or upwards from the floating button.
+ * - Minimalist textless design using custom user-selected iconography (Screenshot, Volume, Power).
+ * - Custom icons scaled to acquire 40-50% (~25dp span) of each 54dp popup button.
+ * - Screenshot & Volume tinted pure white with subtle white accents on dark obsidian base.
+ * - Power tinted vivid coral red (#F87171) with soft red accents on dark obsidian base.
+ * - Strict 12dp margin from the floating button with adaptive direction selection based on remaining screen pixels.
  * - Full-screen dismiss scrim: outside touches safely dismiss the menu without activating background apps.
  */
 class ActionPopoutView @JvmOverloads constructor(
@@ -49,6 +53,31 @@ class ActionPopoutView @JvmOverloads constructor(
     private var anchorY = 0f
     private var anchorWidth = 56f * density
     private var anchorHeight = 56f * density
+
+    // Target icon footprint: ~45% of 54dp circle = 24.3dp (~24.5dp)
+    private val iconTargetSpan = 24.5f * density
+
+    // User-uploaded icon bitmaps (decoded once from drawables)
+    private val screenshotBitmap: Bitmap? by lazy {
+        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_screenshot)
+    }
+    private val volumeBitmap: Bitmap? by lazy {
+        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_volume)
+    }
+    private val powerBitmap: Bitmap? by lazy {
+        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_power)
+    }
+
+    // Paint filters to recolor/tint icons appropriately
+    // Screenshot & Volume: Tinted Pure White
+    private val whiteIconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+        colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
+    }
+
+    // Power: Tinted Vivid Coral Red (#F87171)
+    private val redIconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+        colorFilter = PorterDuffColorFilter(Color.rgb(248, 113, 113), PorterDuff.Mode.SRC_IN)
+    }
 
     // Full-screen subtle scrim
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -80,20 +109,6 @@ class ActionPopoutView @JvmOverloads constructor(
         color = Color.argb(45, 255, 255, 255) // Refined subtle white/grey accent rim
     }
 
-    // Bold White Icons for Shot & Vol (smooth curves, calibrated bold weight)
-    private val boldWhiteStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 2.3f * density
-        color = Color.WHITE
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-
-    private val boldWhiteFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.WHITE
-    }
-
     // Low-opacity Red Accent for Power Button (subtle accent, not too bold)
     private val redAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -104,15 +119,6 @@ class ActionPopoutView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
         color = Color.argb(80, 239, 68, 68) // Tasteful coral-red accent rim
-    }
-
-    // Bold Red Icon for Power (smooth curves, calibrated bold weight)
-    private val boldRedStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 2.4f * density
-        color = Color.rgb(248, 113, 113) // Soft coral red (#F87171), refined accent
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
     }
 
     private var animProgress = 0f
@@ -263,7 +269,7 @@ class ActionPopoutView @JvmOverloads constructor(
         val radius = getCircleRadius()
         val points = getCenterPoints()
 
-        // 2. Circle 0: Screenshot [ Smooth Viewfinder Frame ]
+        // 2. Circle 0: Screenshot [ Custom User Icon ]
         drawCircularButton(
             canvas = canvas,
             cx = points[0].first,
@@ -272,10 +278,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0f,
             isPower = false
         ) { c, cx, cy ->
-            drawSmoothScreenshotViewfinder(c, cx, cy)
+            drawCustomScreenshotIcon(c, cx, cy)
         }
 
-        // 3. Circle 1: Volume [ Smooth Speaker & Sound Waves ]
+        // 3. Circle 1: Volume [ Custom User Icon ]
         drawCircularButton(
             canvas = canvas,
             cx = points[1].first,
@@ -284,10 +290,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.1f,
             isPower = false
         ) { c, cx, cy ->
-            drawSmoothVolumeIcon(c, cx, cy)
+            drawCustomVolumeIcon(c, cx, cy)
         }
 
-        // 4. Circle 2: Power [ Smooth Bold Power Symbol ]
+        // 4. Circle 2: Power [ Custom User Icon ]
         drawCircularButton(
             canvas = canvas,
             cx = points[2].first,
@@ -296,7 +302,7 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.2f,
             isPower = true
         ) { c, cx, cy ->
-            drawSmoothPowerIcon(c, cx, cy)
+            drawCustomPowerIcon(c, cx, cy)
         }
     }
 
@@ -325,163 +331,57 @@ class ActionPopoutView @JvmOverloads constructor(
         darkBasePaint.alpha = (itemProgress * 235).toInt().coerceIn(0, 235)
         canvas.drawCircle(cx, cy, radius, darkBasePaint)
 
-        // Low-Opacity Specific Accents
+        // Low-Opacity Specific Accents & Icon Alpha
         if (isPower) {
-            redAccentPaint.alpha = (itemProgress * 45).toInt().coerceIn(0, 45)
-            redBorderPaint.alpha = (itemProgress * 165).toInt().coerceIn(0, 165)
+            redAccentPaint.alpha = (itemProgress * 25).toInt().coerceIn(0, 25)
+            redBorderPaint.alpha = (itemProgress * 80).toInt().coerceIn(0, 80)
+            redIconPaint.alpha = alphaInt
             canvas.drawCircle(cx, cy, radius, redAccentPaint)
             canvas.drawCircle(cx, cy, radius, redBorderPaint)
         } else {
-            whiteAccentPaint.alpha = (itemProgress * 32).toInt().coerceIn(0, 32)
-            whiteBorderPaint.alpha = (itemProgress * 85).toInt().coerceIn(0, 85)
+            whiteAccentPaint.alpha = (itemProgress * 18).toInt().coerceIn(0, 18)
+            whiteBorderPaint.alpha = (itemProgress * 45).toInt().coerceIn(0, 45)
+            whiteIconPaint.alpha = alphaInt
             canvas.drawCircle(cx, cy, radius, whiteAccentPaint)
             canvas.drawCircle(cx, cy, radius, whiteBorderPaint)
         }
 
-        // Large Bold Centered Icon (>60% of button space)
+        // Custom Tinted Icon (40-50% of button space)
         drawIcon(canvas, cx, cy)
 
         canvas.restore()
     }
 
     /**
-     * Smooth Screen Capture Viewfinder icon.
-     * 10% smaller than previous size (21dp span inside 54dp circle),
-     * featuring smooth quadratic Bezier rounded corner brackets framing a smooth rounded phone screen.
+     * Renders the user's custom Screenshot icon (smartphone with screen crop & home dot).
+     * Tinted crisp pure white, acquiring ~45% of the button space (24.5dp of 54dp circle).
      */
-    private fun drawSmoothScreenshotViewfinder(canvas: Canvas, cx: Float, cy: Float) {
-        val halfW = 10.5f * density // 21dp total width span (10% smaller than 24dp)
-        val halfH = 10.5f * density // 21dp total height span
-        val armLen = 5.2f * density
-        val cornerR = 2.8f * density // Smooth rounded fillet radius (zero sharp corners)
-
-        // 4 Smooth Viewfinder Corner Brackets with Rounded Bezier Fillets
-        // Top-Left ┌
-        val tlPath = Path().apply {
-            moveTo(cx - halfW, cy - halfH + armLen)
-            lineTo(cx - halfW, cy - halfH + cornerR)
-            quadTo(cx - halfW, cy - halfH, cx - halfW + cornerR, cy - halfH)
-            lineTo(cx - halfW + armLen, cy - halfH)
-        }
-        canvas.drawPath(tlPath, boldWhiteStroke)
-
-        // Top-Right ┐
-        val trPath = Path().apply {
-            moveTo(cx + halfW - armLen, cy - halfH)
-            lineTo(cx + halfW - cornerR, cy - halfH)
-            quadTo(cx + halfW, cy - halfH, cx + halfW, cy - halfH + cornerR)
-            lineTo(cx + halfW, cy - halfH + armLen)
-        }
-        canvas.drawPath(trPath, boldWhiteStroke)
-
-        // Bottom-Left └
-        val blPath = Path().apply {
-            moveTo(cx - halfW, cy + halfH - armLen)
-            lineTo(cx - halfW, cy + halfH - cornerR)
-            quadTo(cx - halfW, cy + halfH, cx - halfW + cornerR, cy + halfH)
-            lineTo(cx - halfW + armLen, cy + halfH)
-        }
-        canvas.drawPath(blPath, boldWhiteStroke)
-
-        // Bottom-Right ┘
-        val brPath = Path().apply {
-            moveTo(cx + halfW - armLen, cy + halfH)
-            lineTo(cx + halfW - cornerR, cy + halfH)
-            quadTo(cx + halfW, cy + halfH, cx + halfW, cy + halfH - cornerR)
-            lineTo(cx + halfW, cy + halfH - armLen)
-        }
-        canvas.drawPath(brPath, boldWhiteStroke)
-
-        // Center Smartphone Screen Silhouette with Smooth Rounded Corners
-        val phoneW = 4.8f * density
-        val phoneH = 7.2f * density
-        val phoneRect = RectF(cx - phoneW, cy - phoneH, cx + phoneW, cy + phoneH)
-        val strokeThin = Paint(boldWhiteStroke).apply {
-            strokeWidth = 1.5f * density
-        }
-        canvas.drawRoundRect(phoneRect, 2.6f * density, 2.6f * density, strokeThin)
-
-        // Smooth pill home-indicator bar
-        canvas.drawLine(
-            cx - (1.8f * density),
-            cy + phoneH - (1.8f * density),
-            cx + (1.8f * density),
-            cy + phoneH - (1.8f * density),
-            strokeThin
-        )
+    private fun drawCustomScreenshotIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val bmp = screenshotBitmap ?: return
+        val halfSpan = iconTargetSpan / 2f
+        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, dstRect, whiteIconPaint)
     }
 
     /**
-     * Smooth Volume icon.
-     * 10% smaller than previous size (~21dp span), with organic flowing curves,
-     * smooth Bezier horn flares, and rounded soundwave arcs.
+     * Renders the user's custom Volume icon (speaker with dual soundwaves).
+     * Tinted crisp pure white, acquiring ~45% of the button space (24.5dp of 54dp circle).
      */
-    private fun drawSmoothVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val shiftLeft = 1.2f * density
-        val bodyLeft = cx - (9.5f * density) + shiftLeft
-        val neckX = cx - (5.0f * density) + shiftLeft
-        val mouthX = cx - (0.5f * density) + shiftLeft
-        val neckHalfH = 3.2f * density
-        val mouthHalfH = 8.2f * density
-        val r = 1.6f * density
-
-        val path = Path().apply {
-            moveTo(bodyLeft + r, cy - neckHalfH)
-            lineTo(neckX, cy - neckHalfH)
-            // Smooth organic flare towards mouth
-            quadTo(neckX + (1.6f * density), cy - neckHalfH, mouthX, cy - mouthHalfH)
-            // Smooth rounded front rim of horn
-            quadTo(mouthX + (1.0f * density), cy, mouthX, cy + mouthHalfH)
-            // Smooth organic flare back down to neck
-            quadTo(neckX + (1.6f * density), cy + neckHalfH, neckX, cy + neckHalfH)
-            lineTo(bodyLeft + r, cy + neckHalfH)
-            // Bottom-left rounded corner
-            quadTo(bodyLeft, cy + neckHalfH, bodyLeft, cy + neckHalfH - r)
-            lineTo(bodyLeft, cy - neckHalfH + r)
-            // Top-left rounded corner
-            quadTo(bodyLeft, cy - neckHalfH, bodyLeft + r, cy - neckHalfH)
-            close()
-        }
-        canvas.drawPath(path, boldWhiteFill)
-
-        // Inner sound wave arc (smooth rounded cap)
-        val arcRectSmall = RectF(
-            mouthX + (1.8f * density),
-            cy - (4.2f * density),
-            mouthX + (6.0f * density),
-            cy + (4.2f * density)
-        )
-        canvas.drawArc(arcRectSmall, -38f, 76f, false, boldWhiteStroke)
-
-        // Outer sound wave arc (smooth rounded cap)
-        val arcRectLarge = RectF(
-            mouthX + (4.6f * density),
-            cy - (8.0f * density),
-            mouthX + (11.2f * density),
-            cy + (8.0f * density)
-        )
-        canvas.drawArc(arcRectLarge, -42f, 84f, false, boldWhiteStroke)
+    private fun drawCustomVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val bmp = volumeBitmap ?: return
+        val halfSpan = iconTargetSpan / 2f
+        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, dstRect, whiteIconPaint)
     }
 
     /**
-     * Smooth Power icon.
-     * 10% smaller than previous size (19.6dp diameter),
-     * smooth rounded arc ends and rounded vertical center stem.
+     * Renders the user's custom Power icon (circular ring enclosing IEC power symbol).
+     * Tinted vibrant coral-red (#F87171), acquiring ~45% of the button space (24.5dp of 54dp circle).
      */
-    private fun drawSmoothPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val radius = 9.8f * density // ~19.6dp diameter (10% smaller than 22dp)
-        val arcRect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
-
-        // 280° smooth open arc with rounded caps
-        canvas.drawArc(arcRect, -50f, 280f, false, boldRedStroke)
-
-        // Smooth vertical center stem with rounded dome caps
-        canvas.drawLine(
-            cx,
-            cy - radius - (2.2f * density),
-            cx,
-            cy - (0.6f * density),
-            boldRedStroke
-        )
+    private fun drawCustomPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val bmp = powerBitmap ?: return
+        val halfSpan = iconTargetSpan / 2f
+        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, dstRect, redIconPaint)
     }
 }
