@@ -24,9 +24,9 @@ class AndroidActionExecutor(private val context: Context? = null) : ActionExecut
         return try {
             val audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
             if (audioManager != null) {
-                audioManager.adjustStreamVolume(
-                    AudioManager.STREAM_MUSIC,
+                audioManager.adjustSuggestedStreamVolume(
                     AudioManager.ADJUST_SAME,
+                    AudioManager.USE_DEFAULT_STREAM_TYPE,
                     AudioManager.FLAG_SHOW_UI
                 )
                 android.util.Log.i("AssistX", "openVolumePanel executed successfully")

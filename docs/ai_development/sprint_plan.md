@@ -571,7 +571,9 @@ Sprint F-04 — Final Hardware Regression & Release Packaging
 - Priority: P0
 - Depends on: F-03
 - Objective: Full physical-device regression across the 4 approved actions (Screen Off, Home, Screenshot, Volume) on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
-- Status: Ready for Run
+- Deliverables: Verified 4-action hardware run on physical Realme Narzo 30 4G (RMX2156, realme UI 3.0).
+- Tests/evidence: Live hardware regression run RD-RUN-002 (Double-tap lock: mWakefulness=Asleep; Long-press: Home launcher; Single-tap + Shot: GLOBAL_ACTION_TAKE_SCREENSHOT; Single-tap + Vol: adjustSuggestedStreamVolume). 51 unit tests passing (100%), assembleRelease verified.
+- Status: Passed
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

@@ -81,3 +81,20 @@ This document specifies the real-device test execution matrix for physical hardw
   - Zero crashes or UI stutters on MediaTek Helio G95.
   - Hardware validation complete and approved for personal daily driver use.
 
+
+
+### Real-Device Run Log: RD-RUN-002 (4-Action Feature Set Validation)
+- **Date/Time**: 2026-10-30 01:21 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: ca7a2a6
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Strictly Scoped 4-Feature Set (Screen Off, Home, Screenshot, Volume)
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Single-Tap Action Popout**: PASS — tapping floating button opens sleek dark pill container adjacent to the button with [ Shot ] and [ Vol ] shortcuts. Orientation automatically adapts (opens left on right screen edge; opens right on left screen edge). Auto-dismisses after 4s.
+  - **Screenshot Capture (Sprint F-02)**: PASS — tapping [ Shot ] dismisses popout, delays 150ms for clean frame, and triggers native GLOBAL_ACTION_TAKE_SCREENSHOT (	akeScreenshot performed, result: true).
+  - **Volume Controls (Sprint F-03)**: PASS — tapping [ Vol ] triggers djustSuggestedStreamVolume(ADJUST_SAME, USE_DEFAULT_STREAM_TYPE, FLAG_SHOW_UI) (openVolumePanel executed successfully), bringing up native volume slider.
+  - **Screen Off (Regression)**: PASS — double-tap immediately locks display and suspends screen (mWakefulness=Asleep).
+  - **Home (Regression)**: PASS — 500ms long-press navigates directly to Realme Home launcher (com.android.launcher/.Launcher).
+  - **Drag & Edge Snap (Regression)**: PASS — smooth drag and 250ms snap to edge preserved.
+  - **Idle Fade (Regression)**: PASS — dims to idle opacity after 3s inactivity.
