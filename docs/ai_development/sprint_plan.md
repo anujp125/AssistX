@@ -591,6 +591,14 @@ Sprint F-06 — Vertical Speed-Dial Circular Popout
 - Deliverables: Redesigned ActionPopoutView with individual circle hit testing, cascading drop-down entrance animation, accent silver-grey circular discs (#EEF1F5), and red accent ring for Power; OverlayManager downward vertical positioning.
 - Tests/evidence: 52 unit tests passing (100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-004: individual circular buttons expanding downwards, touch detection on all 3 circles).
 - Status: Passed
+
+Sprint F-07 — Dark Mode Textless Circular Popout Design
+- Priority: P0
+- Depends on: F-06
+- Objective: Remove text labels, make icons large and bold centered, and switch button backgrounds to dark mode with low-opacity accents of white and coral red.
+- Deliverables: Updated ActionPopoutView with dark obsidian charcoal (#16161A) circular bases, low-opacity white accent (rgba(255,255,255,0.12)) with 3.5px bold white icons for Shot/Vol, and low-opacity red accent (rgba(239,68,68,0.18)) with 4.0px bold coral-red power symbol.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-005: verified textless dark mode popouts, touch detection on all 3 enlarged icons).
+- Status: Passed
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

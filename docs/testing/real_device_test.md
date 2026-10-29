@@ -130,3 +130,23 @@ This document specifies the real-device test execution matrix for physical hardw
     - Tap Circle 1 (Vol at y=1282): openVolumePanel executed successfully (PASS)
     - Tap Circle 2 (Power at y=1462): openPowerDialog performed, result: true (PASS)
   - **Safe Bounds Adaptation**: PASS — if button is near bottom of display, popout automatically opens upwards to prevent clipping.
+
+
+### Real-Device Run Log: RD-RUN-005 (Sprint F-07 Dark Mode Textless Popout)
+- **Date/Time**: 2026-10-30 01:51 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-07)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Textless dark mode circular popouts with large bold icons and low-opacity white/red accents
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Minimalist Textless Aesthetic**: PASS — text labels completely removed from all 3 circular buttons.
+  - **Large Bold Centered Icons**: PASS — camera icon (3.5px stroke), speaker icon (3.5px stroke), and power symbol (4.0px stroke) centered precisely in each 52dp circle.
+  - **Dark Mode with Specific Low-Opacity Accents**:
+    - Circle 0 (Shot): Dark obsidian base (#16161A), low-opacity white accent wash (rgba(255,255,255,0.12)), subtle white border ring, bold pure white centered camera icon.
+    - Circle 1 (Vol): Dark obsidian base (#16161A), low-opacity white accent wash (rgba(255,255,255,0.12)), subtle white border ring, bold pure white centered volume icon.
+    - Circle 2 (Power): Dark obsidian base (#16161A), low-opacity coral-red accent wash (rgba(239,68,68,0.18)), vibrant red border ring, bold vivid coral-red power symbol (#FF4B4B).
+  - **Touch Hit-Testing on All 3 Enlarged Icons**:
+    - Tap Circle 0 (Shot at y=1102): 	akeScreenshot performed, result: true (PASS)
+    - Tap Circle 1 (Vol at y=1282): openVolumePanel executed successfully (PASS)
+    - Tap Circle 2 (Power at y=1462): openPowerDialog performed, result: true (PASS)

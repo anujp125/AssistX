@@ -16,9 +16,9 @@ import android.view.animation.OvershootInterpolator
 import kotlin.math.hypot
 
 /**
- * 3 separate individual circular popout buttons expanding vertically downwards with appropriate margins.
- * Each popout button features an accent white/grey background circle with crisp icons, and a specially
- * differentiated Power button.
+ * 3 separate individual circular popout buttons expanding vertically downwards.
+ * Features a minimalist textless design with large bold centered icons, dark mode backgrounds,
+ * and low-opacity accents of white for utility shortcuts and coral red for the Power button.
  */
 class ActionPopoutView @JvmOverloads constructor(
     context: Context,
@@ -38,76 +38,69 @@ class ActionPopoutView @JvmOverloads constructor(
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { listener?.onDismissRequested() }
 
-    // Accent White/Grey background circle styling
-    private val circleBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Dark Mode Base Fill
+    private val darkBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.rgb(238, 241, 245) // Premium light silver-grey accent
+        color = Color.argb(235, 22, 22, 26) // Deep dark obsidian charcoal
     }
 
-    private val circleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Shadow Paint
+    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(55, 0, 0, 0)
+    }
+
+    // Low-opacity White Accent for Shot & Vol
+    private val whiteAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(32, 255, 255, 255) // Low-opacity white wash
+    }
+
+    private val whiteBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.5f
-        color = Color.argb(160, 190, 198, 210) // Subtle refined border
+        color = Color.argb(85, 255, 255, 255) // Refined subtle white/grey border ring
     }
 
-    // Shadow/drop glow paint
-    private val circleShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Large Bold White Icons for Shot & Vol
+    private val boldWhiteIconStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.5f
+        color = Color.WHITE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
+    private val boldWhiteIconFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(40, 0, 0, 0)
+        color = Color.WHITE
     }
 
-    // Standard Icon & Text paints (Slate Dark on White/Grey)
-    private val iconStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Low-opacity Red Accent for Power Button
+    private val redAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(45, 239, 68, 68) // Low-opacity coral-red wash (#2DEF4444)
+    }
+
+    private val redBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.8f
-        color = Color.rgb(30, 41, 59) // Deep slate dark (#1E293B)
+        color = Color.argb(165, 239, 68, 68) // Vibrant coral-red border ring
+    }
+
+    // Large Bold Red Icon for Power
+    private val boldRedIconStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 4.0f
+        color = Color.rgb(255, 75, 75) // Vivid coral red (#FF4B4B)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
-    }
-
-    private val iconFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.rgb(30, 41, 59)
-    }
-
-    private val labelTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(30, 41, 59)
-        textSize = 17f
-        textAlign = Paint.Align.CENTER
-        isFakeBoldText = true
-    }
-
-    // Special Differentiator for Power Button
-    private val powerCircleBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.rgb(255, 242, 242) // Accent white/grey with soft coral warmth
-    }
-
-    private val powerBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 3f
-        color = Color.rgb(239, 68, 68) // Vivid coral red accent ring (#EF4444)
-    }
-
-    private val powerIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 3.2f
-        color = Color.rgb(220, 38, 38) // Vivid red (#DC2626)
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-
-    private val powerLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(220, 38, 38)
-        textSize = 17f
-        textAlign = Paint.Align.CENTER
-        isFakeBoldText = true
     }
 
     private var animProgress = 0f
 
     init {
-        // Vertical entrance cascade animation
+        // Vertical cascading entrance animation
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 220
             interpolator = OvershootInterpolator(1.25f)
@@ -141,7 +134,7 @@ class ActionPopoutView @JvmOverloads constructor(
         val diameter = radius * 2f
         val h = height.toFloat()
 
-        // Distribute 3 circles evenly vertically
+        // Distribute 3 circles evenly vertically with appropriate margins
         val remainingSpace = h - (3f * diameter)
         val spacing = (remainingSpace / 4f).coerceAtLeast(8f)
 
@@ -158,7 +151,7 @@ class ActionPopoutView @JvmOverloads constructor(
             val touchX = event.x
             val touchY = event.y
             val points = getCenterPoints()
-            val touchRadius = getCircleRadius() + 14f // Comfortable touch hit target
+            val touchRadius = getCircleRadius() + 14f
 
             for (i in points.indices) {
                 val (cx, cy) = points[i]
@@ -180,7 +173,6 @@ class ActionPopoutView @JvmOverloads constructor(
                     return true
                 }
             }
-            // Tapped in transparent spacing between circles -> dismiss
             listener?.onDismissRequested()
             return true
         }
@@ -198,7 +190,7 @@ class ActionPopoutView @JvmOverloads constructor(
 
         val points = getCenterPoints()
 
-        // 1. Draw Circle 0: Screenshot [ 📸 Shot ]
+        // 1. Circle 0: Screenshot [ 📸 ]
         drawCircularButton(
             canvas = canvas,
             cx = points[0].first,
@@ -207,12 +199,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0f,
             isPower = false
         ) { c, cx, cy ->
-            val iconCy = cy - 4f
-            drawCameraIcon(c, cx, iconCy)
-            c.drawText("Shot", cx, cy + radius * 0.65f, labelTextPaint)
+            drawLargeCameraIcon(c, cx, cy)
         }
 
-        // 2. Draw Circle 1: Volume [ 🔊 Vol ]
+        // 2. Circle 1: Volume [ 🔊 ]
         drawCircularButton(
             canvas = canvas,
             cx = points[1].first,
@@ -221,12 +211,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.1f,
             isPower = false
         ) { c, cx, cy ->
-            val iconCy = cy - 4f
-            drawVolumeIcon(c, cx, iconCy)
-            c.drawText("Vol", cx, cy + radius * 0.65f, labelTextPaint)
+            drawLargeVolumeIcon(c, cx, cy)
         }
 
-        // 3. Draw Circle 2: Power [ ⏻ Power ] (Special Differentiator)
+        // 3. Circle 2: Power [ ⏻ ] (Accented Coral Red)
         drawCircularButton(
             canvas = canvas,
             cx = points[2].first,
@@ -235,9 +223,7 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.2f,
             isPower = true
         ) { c, cx, cy ->
-            val iconCy = cy - 4f
-            drawPowerIcon(c, cx, iconCy)
-            c.drawText("Power", cx, cy + radius * 0.65f, powerLabelPaint)
+            drawLargePowerIcon(c, cx, cy)
         }
     }
 
@@ -248,9 +234,8 @@ class ActionPopoutView @JvmOverloads constructor(
         radius: Float,
         animOffset: Float,
         isPower: Boolean,
-        drawContent: (Canvas, Float, Float) -> Unit
+        drawIcon: (Canvas, Float, Float) -> Unit
     ) {
-        // Individual scale and alpha based on cascading animProgress
         val itemProgress = ((animProgress - animOffset) / (1f - animOffset)).coerceIn(0f, 1f)
         if (itemProgress <= 0f) return
 
@@ -258,71 +243,75 @@ class ActionPopoutView @JvmOverloads constructor(
         canvas.scale(itemProgress, itemProgress, cx, cy)
 
         val alphaInt = (itemProgress * 255).toInt().coerceIn(0, 255)
-        circleShadowPaint.alpha = (itemProgress * 50).toInt().coerceIn(0, 50)
+        shadowPaint.alpha = (itemProgress * 65).toInt().coerceIn(0, 65)
 
-        // Drop shadow circle
-        canvas.drawCircle(cx, cy + 3.5f, radius, circleShadowPaint)
+        // Drop shadow
+        canvas.drawCircle(cx, cy + 3.5f, radius, shadowPaint)
 
-        // Background Accent White/Grey circle
+        // 1. Dark Mode Base Circle
+        darkBasePaint.alpha = (itemProgress * 235).toInt().coerceIn(0, 235)
+        canvas.drawCircle(cx, cy, radius, darkBasePaint)
+
+        // 2. Specific Low-Opacity Accents
         if (isPower) {
-            powerCircleBgPaint.alpha = alphaInt
-            powerBorderPaint.alpha = alphaInt
-            canvas.drawCircle(cx, cy, radius, powerCircleBgPaint)
-            canvas.drawCircle(cx, cy, radius, powerBorderPaint)
+            redAccentPaint.alpha = (itemProgress * 45).toInt().coerceIn(0, 45)
+            redBorderPaint.alpha = (itemProgress * 165).toInt().coerceIn(0, 165)
+            canvas.drawCircle(cx, cy, radius, redAccentPaint)
+            canvas.drawCircle(cx, cy, radius, redBorderPaint)
         } else {
-            circleBgPaint.alpha = alphaInt
-            circleBorderPaint.alpha = alphaInt
-            canvas.drawCircle(cx, cy, radius, circleBgPaint)
-            canvas.drawCircle(cx, cy, radius, circleBorderPaint)
+            whiteAccentPaint.alpha = (itemProgress * 32).toInt().coerceIn(0, 32)
+            whiteBorderPaint.alpha = (itemProgress * 85).toInt().coerceIn(0, 85)
+            canvas.drawCircle(cx, cy, radius, whiteAccentPaint)
+            canvas.drawCircle(cx, cy, radius, whiteBorderPaint)
         }
 
-        // Content
-        drawContent(canvas, cx, cy)
+        // 3. Large Bold Centered Icon
+        drawIcon(canvas, cx, cy)
 
         canvas.restore()
     }
 
-    private fun drawCameraIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val bw = 15f
-        val bh = 11f
+    private fun drawLargeCameraIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val bw = 18f
+        val bh = 13.5f
         val rect = RectF(cx - bw, cy - bh + 2f, cx + bw, cy + bh + 2f)
-        canvas.drawRoundRect(rect, 3.5f, 3.5f, iconStrokePaint)
+        canvas.drawRoundRect(rect, 4.5f, 4.5f, boldWhiteIconStroke)
 
-        // Lens
-        canvas.drawCircle(cx, cy + 2f, 4.5f, iconStrokePaint)
+        // Center Lens
+        canvas.drawCircle(cx, cy + 2f, 5.5f, boldWhiteIconStroke)
 
-        // Flash
-        canvas.drawCircle(cx - 8.5f, cy - bh + 5f, 1.4f, iconFillPaint)
+        // Flash dot
+        canvas.drawCircle(cx - 10f, cy - bh + 6f, 1.8f, boldWhiteIconFill)
     }
 
-    private fun drawVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
+    private fun drawLargeVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
         val path = Path().apply {
-            moveTo(cx - 10f, cy - 3.5f)
-            lineTo(cx - 6f, cy - 3.5f)
-            lineTo(cx, cy - 8.5f)
-            lineTo(cx, cy + 8.5f)
-            lineTo(cx - 6f, cy + 3.5f)
-            lineTo(cx - 10f, cy + 3.5f)
+            moveTo(cx - 12.5f, cy - 4.5f)
+            lineTo(cx - 7f, cy - 4.5f)
+            lineTo(cx, cy - 11f)
+            lineTo(cx, cy + 11f)
+            lineTo(cx - 7f, cy + 4.5f)
+            lineTo(cx - 12.5f, cy + 4.5f)
             close()
         }
-        canvas.drawPath(path, iconFillPaint)
+        canvas.drawPath(path, boldWhiteIconFill)
 
-        // Sound waves
-        val arcRectSmall = RectF(cx - 2f, cy - 5f, cx + 6.5f, cy + 5f)
-        canvas.drawArc(arcRectSmall, -45f, 90f, false, iconStrokePaint)
+        // Sound wave arcs
+        val arcRectSmall = RectF(cx - 2f, cy - 6.5f, cx + 8.5f, cy + 6.5f)
+        canvas.drawArc(arcRectSmall, -45f, 90f, false, boldWhiteIconStroke)
 
-        val arcRectLarge = RectF(cx + 1.5f, cy - 9f, cx + 12f, cy + 9f)
-        canvas.drawArc(arcRectLarge, -45f, 90f, false, iconStrokePaint)
+        val arcRectLarge = RectF(cx + 2.5f, cy - 11.5f, cx + 15.5f, cy + 11.5f)
+        canvas.drawArc(arcRectLarge, -45f, 90f, false, boldWhiteIconStroke)
     }
 
-    private fun drawPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val radius = 9f
+    private fun drawLargePowerIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val radius = 12.5f
         val arcRect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
 
-        // 270° open arc
-        canvas.drawArc(arcRect, -45f, 270f, false, powerIconPaint)
+        // 270° bold open arc
+        canvas.drawArc(arcRect, -45f, 270f, false, boldRedIconStroke)
 
-        // Vertical center line through open gap
-        canvas.drawLine(cx, cy - radius - 2f, cx, cy - 1f, powerIconPaint)
+        // Bold vertical center line through open gap
+        canvas.drawLine(cx, cy - radius - 2.5f, cx, cy - 1f, boldRedIconStroke)
     }
 }
