@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import com.nudge.assist.data.OverlayPreferences
+import com.nudge.assist.data.UserPreferencesContract
 import com.nudge.assist.service.AssistAccessibilityService
 import com.nudge.assist.state.OverlayPermissionState
 import com.nudge.assist.state.OverlayState
@@ -31,16 +32,16 @@ class OverlayManager(
     private val context: Context,
     private val stateCoordinator: StateCoordinator,
     private val permissionAdapter: OverlayPermissionAdapter = AndroidOverlayPermissionAdapter(),
-    private val preferences: OverlayPreferences = OverlayPreferences(context),
+    private val preferences: UserPreferencesContract = OverlayPreferences(context),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
-) {
+) : OverlayManagerContract {
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var floatingView: FloatingButtonView? = null
     private var layoutParams: WindowManager.LayoutParams? = null
 
     @Volatile
-    var isAttached: Boolean = false
+    override var isAttached: Boolean = false
         private set
 
     private val buttonSizePx: Int
@@ -53,7 +54,7 @@ class OverlayManager(
      * Attaches the single floating overlay window if permissions exist and it is not already attached.
      * Returns true if attached successfully or already attached; false if blocked by permission or error.
      */
-    fun attachOverlay(): Boolean {
+    override fun attachOverlay(): Boolean {
         if (isAttached) {
             return true
         }
@@ -137,7 +138,7 @@ class OverlayManager(
     /**
      * Removes the floating overlay window from WindowManager.
      */
-    fun detachOverlay(): Boolean {
+    override fun detachOverlay(): Boolean {
         if (!isAttached || floatingView == null) {
             stateCoordinator.updateOverlayState(OverlayState.DETACHED)
             return true

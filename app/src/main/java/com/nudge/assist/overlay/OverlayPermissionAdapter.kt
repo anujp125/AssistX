@@ -13,15 +13,16 @@ import com.nudge.assist.state.OverlayPermissionState
  */
 interface OverlayPermissionAdapter {
     /** Checks the current overlay permission state. */
-    fun checkPermission(context: Context): OverlayPermissionState
+    fun checkPermission(context: Context?): OverlayPermissionState
 
     /** Creates an Intent leading directly to the overlay permission toggle for AssistX. */
-    fun createSettingsIntent(context: Context): Intent
+    fun createSettingsIntent(context: Context?): Intent
 }
 
 class AndroidOverlayPermissionAdapter : OverlayPermissionAdapter {
 
-    override fun checkPermission(context: Context): OverlayPermissionState {
+    override fun checkPermission(context: Context?): OverlayPermissionState {
+        if (context == null) return OverlayPermissionState.UNKNOWN
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (Settings.canDrawOverlays(context)) {
@@ -38,19 +39,19 @@ class AndroidOverlayPermissionAdapter : OverlayPermissionAdapter {
         }
     }
 
-    override fun createSettingsIntent(context: Context): Intent {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    override fun createSettingsIntent(context: Context?): Intent {
+        val pkg = context?.packageName
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && pkg != null) {
             Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${context.packageName}")
+                Uri.parse("package:$pkg")
             ).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         } else {
-            Intent(Settings.ACTION_SETTINGS).apply {
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }
     }
 }
-

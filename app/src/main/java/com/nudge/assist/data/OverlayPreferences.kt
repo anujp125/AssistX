@@ -17,7 +17,7 @@ data class OverlayPosition(
     val y: Int = -1
 )
 
-class OverlayPreferences(private val context: Context) {
+class OverlayPreferences(private val context: Context) : UserPreferencesContract {
 
     companion object {
         private val KEY_DESIRED_ENABLED = booleanPreferencesKey("desired_enabled")
@@ -25,24 +25,24 @@ class OverlayPreferences(private val context: Context) {
         private val KEY_POSITION_Y = intPreferencesKey("button_position_y")
     }
 
-    val desiredEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+    override val desiredEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[KEY_DESIRED_ENABLED] ?: false
     }
 
-    val positionFlow: Flow<OverlayPosition> = context.dataStore.data.map { preferences ->
+    override val positionFlow: Flow<OverlayPosition> = context.dataStore.data.map { preferences ->
         OverlayPosition(
             x = preferences[KEY_POSITION_X] ?: -1,
             y = preferences[KEY_POSITION_Y] ?: -1
         )
     }
 
-    suspend fun setDesiredEnabled(enabled: Boolean) {
+    override suspend fun setDesiredEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_DESIRED_ENABLED] = enabled
         }
     }
 
-    suspend fun savePosition(x: Int, y: Int) {
+    override suspend fun savePosition(x: Int, y: Int) {
         context.dataStore.edit { preferences ->
             preferences[KEY_POSITION_X] = x
             preferences[KEY_POSITION_Y] = y
