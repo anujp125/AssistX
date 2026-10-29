@@ -13,10 +13,12 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.OvershootInterpolator
+import kotlin.math.hypot
 
 /**
- * Sleek 3-action popout view displaying Screenshot, Volume, and Power shortcuts adjacent to the floating button.
- * Features an enlarged thumb-friendly footprint and an accented, distinct Power button.
+ * 3 separate individual circular popout buttons expanding vertically downwards with appropriate margins.
+ * Each popout button features an accent white/grey background circle with crisp icons, and a specially
+ * differentiated Power button.
  */
 class ActionPopoutView @JvmOverloads constructor(
     context: Context,
@@ -36,76 +38,81 @@ class ActionPopoutView @JvmOverloads constructor(
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { listener?.onDismissRequested() }
 
-    private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Accent White/Grey background circle styling
+    private val circleBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(245, 26, 26, 26) // Deep dark charcoal
+        color = Color.rgb(238, 241, 245) // Premium light silver-grey accent
     }
 
-    private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val circleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.5f
-        color = Color.argb(120, 255, 255, 255)
+        color = Color.argb(160, 190, 198, 210) // Subtle refined border
     }
 
-    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 1.5f
-        color = Color.argb(60, 255, 255, 255)
+    // Shadow/drop glow paint
+    private val circleShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(40, 0, 0, 0)
     }
 
-    private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Standard Icon & Text paints (Slate Dark on White/Grey)
+    private val iconStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 3f
-        color = Color.WHITE
+        strokeWidth = 2.8f
+        color = Color.rgb(30, 41, 59) // Deep slate dark (#1E293B)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
 
     private val iconFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.WHITE
+        color = Color.rgb(30, 41, 59)
     }
 
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(230, 255, 255, 255)
-        textSize = 21f
-        textAlign = Paint.Align.CENTER
-    }
-
-    // Special distinct styling for Power Button
-    private val powerBackdropPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = Color.argb(45, 255, 75, 75) // Subtle soft red glow/badge
-    }
-
-    private val powerIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 3.5f
-        color = Color.rgb(255, 90, 95) // Vivid coral red
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-
-    private val powerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(255, 125, 125)
-        textSize = 21f
+    private val labelTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(30, 41, 59)
+        textSize = 17f
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
 
-    private val bgRect = RectF()
-    private val powerBadgeRect = RectF()
-    private var animScale = 1.0f
-    private var animAlpha = 1.0f
+    // Special Differentiator for Power Button
+    private val powerCircleBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.rgb(255, 242, 242) // Accent white/grey with soft coral warmth
+    }
+
+    private val powerBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+        color = Color.rgb(239, 68, 68) // Vivid coral red accent ring (#EF4444)
+    }
+
+    private val powerIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.2f
+        color = Color.rgb(220, 38, 38) // Vivid red (#DC2626)
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
+    private val powerLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(220, 38, 38)
+        textSize = 17f
+        textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
+    }
+
+    private var animProgress = 0f
 
     init {
-        // Entrance animation
-        ValueAnimator.ofFloat(0.85f, 1.0f).apply {
-            duration = 180
-            interpolator = OvershootInterpolator(1.2f)
+        // Vertical entrance cascade animation
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 220
+            interpolator = OvershootInterpolator(1.25f)
             addUpdateListener { animator ->
-                animScale = animator.animatedValue as Float
-                animAlpha = (animScale - 0.85f) / 0.15f
+                animProgress = animator.animatedValue as Float
                 invalidate()
             }
             start()
@@ -123,26 +130,58 @@ class ActionPopoutView @JvmOverloads constructor(
         handler.removeCallbacks(autoDismissRunnable)
     }
 
+    private fun getCircleRadius(): Float {
+        val w = width.toFloat()
+        return (w / 2f) - 6f
+    }
+
+    private fun getCenterPoints(): Array<Pair<Float, Float>> {
+        val cx = width / 2f
+        val radius = getCircleRadius()
+        val diameter = radius * 2f
+        val h = height.toFloat()
+
+        // Distribute 3 circles evenly vertically
+        val remainingSpace = h - (3f * diameter)
+        val spacing = (remainingSpace / 4f).coerceAtLeast(8f)
+
+        val cy0 = spacing + radius
+        val cy1 = cy0 + diameter + spacing
+        val cy2 = cy1 + diameter + spacing
+
+        return arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         resetAutoDismissTimer()
         if (event.actionMasked == MotionEvent.ACTION_UP) {
             val touchX = event.x
-            val colWidth = width / 3f
-            android.util.Log.i("AssistX", "ActionPopoutView touch UP at x=$touchX, colWidth=$colWidth, width=$width")
-            when {
-                touchX < colWidth -> {
-                    android.util.Log.i("AssistX", "ActionPopoutView: Screenshot clicked")
-                    listener?.onScreenshotClicked()
-                }
-                touchX < 2 * colWidth -> {
-                    android.util.Log.i("AssistX", "ActionPopoutView: Volume clicked")
-                    listener?.onVolumeClicked()
-                }
-                else -> {
-                    android.util.Log.i("AssistX", "ActionPopoutView: Power clicked")
-                    listener?.onPowerClicked()
+            val touchY = event.y
+            val points = getCenterPoints()
+            val touchRadius = getCircleRadius() + 14f // Comfortable touch hit target
+
+            for (i in points.indices) {
+                val (cx, cy) = points[i]
+                if (hypot(touchX - cx, touchY - cy) <= touchRadius) {
+                    when (i) {
+                        0 -> {
+                            android.util.Log.i("AssistX", "ActionPopoutView: Screenshot clicked")
+                            listener?.onScreenshotClicked()
+                        }
+                        1 -> {
+                            android.util.Log.i("AssistX", "ActionPopoutView: Volume clicked")
+                            listener?.onVolumeClicked()
+                        }
+                        2 -> {
+                            android.util.Log.i("AssistX", "ActionPopoutView: Power clicked")
+                            listener?.onPowerClicked()
+                        }
+                    }
+                    return true
                 }
             }
+            // Tapped in transparent spacing between circles -> dismiss
+            listener?.onDismissRequested()
             return true
         }
         return true
@@ -154,94 +193,136 @@ class ActionPopoutView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0 || h <= 0) return
 
+        val radius = getCircleRadius()
+        if (radius <= 0) return
+
+        val points = getCenterPoints()
+
+        // 1. Draw Circle 0: Screenshot [ 📸 Shot ]
+        drawCircularButton(
+            canvas = canvas,
+            cx = points[0].first,
+            cy = points[0].second,
+            radius = radius,
+            animOffset = 0f,
+            isPower = false
+        ) { c, cx, cy ->
+            val iconCy = cy - 4f
+            drawCameraIcon(c, cx, iconCy)
+            c.drawText("Shot", cx, cy + radius * 0.65f, labelTextPaint)
+        }
+
+        // 2. Draw Circle 1: Volume [ 🔊 Vol ]
+        drawCircularButton(
+            canvas = canvas,
+            cx = points[1].first,
+            cy = points[1].second,
+            radius = radius,
+            animOffset = 0.1f,
+            isPower = false
+        ) { c, cx, cy ->
+            val iconCy = cy - 4f
+            drawVolumeIcon(c, cx, iconCy)
+            c.drawText("Vol", cx, cy + radius * 0.65f, labelTextPaint)
+        }
+
+        // 3. Draw Circle 2: Power [ ⏻ Power ] (Special Differentiator)
+        drawCircularButton(
+            canvas = canvas,
+            cx = points[2].first,
+            cy = points[2].second,
+            radius = radius,
+            animOffset = 0.2f,
+            isPower = true
+        ) { c, cx, cy ->
+            val iconCy = cy - 4f
+            drawPowerIcon(c, cx, iconCy)
+            c.drawText("Power", cx, cy + radius * 0.65f, powerLabelPaint)
+        }
+    }
+
+    private fun drawCircularButton(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        radius: Float,
+        animOffset: Float,
+        isPower: Boolean,
+        drawContent: (Canvas, Float, Float) -> Unit
+    ) {
+        // Individual scale and alpha based on cascading animProgress
+        val itemProgress = ((animProgress - animOffset) / (1f - animOffset)).coerceIn(0f, 1f)
+        if (itemProgress <= 0f) return
+
         canvas.save()
-        canvas.scale(animScale, animScale, w / 2f, h / 2f)
-        val alphaInt = (animAlpha * 245).toInt().coerceIn(0, 255)
-        bgPaint.alpha = alphaInt
+        canvas.scale(itemProgress, itemProgress, cx, cy)
 
-        // 1. Draw rounded pill container
-        bgRect.set(2f, 2f, w - 2f, h - 2f)
-        val cornerRadius = h / 2f
-        canvas.drawRoundRect(bgRect, cornerRadius, cornerRadius, bgPaint)
-        canvas.drawRoundRect(bgRect, cornerRadius, cornerRadius, borderPaint)
+        val alphaInt = (itemProgress * 255).toInt().coerceIn(0, 255)
+        circleShadowPaint.alpha = (itemProgress * 50).toInt().coerceIn(0, 50)
 
-        val colWidth = w / 3f
-        val centerY = h * 0.40f
+        // Drop shadow circle
+        canvas.drawCircle(cx, cy + 3.5f, radius, circleShadowPaint)
 
-        // 2. Draw vertical dividers between buttons
-        canvas.drawLine(colWidth, h * 0.20f, colWidth, h * 0.80f, dividerPaint)
-        canvas.drawLine(colWidth * 2f, h * 0.20f, colWidth * 2f, h * 0.80f, dividerPaint)
+        // Background Accent White/Grey circle
+        if (isPower) {
+            powerCircleBgPaint.alpha = alphaInt
+            powerBorderPaint.alpha = alphaInt
+            canvas.drawCircle(cx, cy, radius, powerCircleBgPaint)
+            canvas.drawCircle(cx, cy, radius, powerBorderPaint)
+        } else {
+            circleBgPaint.alpha = alphaInt
+            circleBorderPaint.alpha = alphaInt
+            canvas.drawCircle(cx, cy, radius, circleBgPaint)
+            canvas.drawCircle(cx, cy, radius, circleBorderPaint)
+        }
 
-        // 3. Draw Left Item: Camera / Screenshot
-        val leftCenterX = colWidth * 0.5f
-        drawCameraIcon(canvas, leftCenterX, centerY)
-        canvas.drawText("Shot", leftCenterX, h * 0.84f, textPaint)
-
-        // 4. Draw Center Item: Speaker / Volume
-        val midCenterX = colWidth * 1.5f
-        drawVolumeIcon(canvas, midCenterX, centerY)
-        canvas.drawText("Vol", midCenterX, h * 0.84f, textPaint)
-
-        // 5. Draw Right Item: Special Accented Power Button
-        val rightCenterX = colWidth * 2.5f
-
-        // Soft tinted backdrop circle for Power differentiator
-        val badgeRadius = h * 0.40f
-        powerBadgeRect.set(
-            rightCenterX - badgeRadius,
-            h * 0.10f,
-            rightCenterX + badgeRadius,
-            h * 0.90f
-        )
-        canvas.drawRoundRect(powerBadgeRect, badgeRadius, badgeRadius, powerBackdropPaint)
-
-        drawPowerIcon(canvas, rightCenterX, centerY)
-        canvas.drawText("Power", rightCenterX, h * 0.84f, powerTextPaint)
+        // Content
+        drawContent(canvas, cx, cy)
 
         canvas.restore()
     }
 
     private fun drawCameraIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val bw = 19f
-        val bh = 14f
+        val bw = 15f
+        val bh = 11f
         val rect = RectF(cx - bw, cy - bh + 2f, cx + bw, cy + bh + 2f)
-        canvas.drawRoundRect(rect, 4.5f, 4.5f, iconPaint)
+        canvas.drawRoundRect(rect, 3.5f, 3.5f, iconStrokePaint)
 
-        // Lens circle
-        canvas.drawCircle(cx, cy + 2f, 6f, iconPaint)
+        // Lens
+        canvas.drawCircle(cx, cy + 2f, 4.5f, iconStrokePaint)
 
-        // Flash dot
-        canvas.drawCircle(cx - 11f, cy - bh + 6f, 1.8f, iconFillPaint)
+        // Flash
+        canvas.drawCircle(cx - 8.5f, cy - bh + 5f, 1.4f, iconFillPaint)
     }
 
     private fun drawVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
         val path = Path().apply {
-            moveTo(cx - 13f, cy - 4.5f)
-            lineTo(cx - 7.5f, cy - 4.5f)
-            lineTo(cx, cy - 11f)
-            lineTo(cx, cy + 11f)
-            lineTo(cx - 7.5f, cy + 4.5f)
-            lineTo(cx - 13f, cy + 4.5f)
+            moveTo(cx - 10f, cy - 3.5f)
+            lineTo(cx - 6f, cy - 3.5f)
+            lineTo(cx, cy - 8.5f)
+            lineTo(cx, cy + 8.5f)
+            lineTo(cx - 6f, cy + 3.5f)
+            lineTo(cx - 10f, cy + 3.5f)
             close()
         }
         canvas.drawPath(path, iconFillPaint)
 
-        // Sound wave arcs
-        val arcRectSmall = RectF(cx - 2f, cy - 6.5f, cx + 9f, cy + 6.5f)
-        canvas.drawArc(arcRectSmall, -45f, 90f, false, iconPaint)
+        // Sound waves
+        val arcRectSmall = RectF(cx - 2f, cy - 5f, cx + 6.5f, cy + 5f)
+        canvas.drawArc(arcRectSmall, -45f, 90f, false, iconStrokePaint)
 
-        val arcRectLarge = RectF(cx + 2.5f, cy - 12f, cx + 16.5f, cy + 12f)
-        canvas.drawArc(arcRectLarge, -45f, 90f, false, iconPaint)
+        val arcRectLarge = RectF(cx + 1.5f, cy - 9f, cx + 12f, cy + 9f)
+        canvas.drawArc(arcRectLarge, -45f, 90f, false, iconStrokePaint)
     }
 
     private fun drawPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val radius = 11.5f
+        val radius = 9f
         val arcRect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
 
-        // Draw 280° open circle (leaves a 80° gap at top from -130° to -50°)
-        canvas.drawArc(arcRect, -40f, 260f, false, powerIconPaint)
+        // 270° open arc
+        canvas.drawArc(arcRect, -45f, 270f, false, powerIconPaint)
 
-        // Draw vertical center notch through top gap
-        canvas.drawLine(cx, cy - radius - 2.5f, cx, cy - 1f, powerIconPaint)
+        // Vertical center line through open gap
+        canvas.drawLine(cx, cy - radius - 2f, cx, cy - 1f, powerIconPaint)
     }
 }

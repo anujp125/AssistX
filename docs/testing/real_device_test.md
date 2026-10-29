@@ -112,3 +112,21 @@ This document specifies the real-device test execution matrix for physical hardw
   - **Power Button Differentiator**: PASS — highlighted with vivid coral red IEC 5009 power symbol (#FF5A5F), soft circular tinted backdrop (#2DFF4B4B), and bold text label.
   - **Native Power / Reboot Dialog**: PASS — tapping [ Power ] dismisses popout and invokes GLOBAL_ACTION_POWER_DIALOG (openPowerDialog performed, result: true). The official realme UI power screen appears with Emergency, Restart, Power off, and Lock screen cards.
   - **Dialog Dismissal**: PASS — pressing back or tapping outside returns cleanly to home launcher without residue.
+
+
+### Real-Device Run Log: RD-RUN-004 (Sprint F-06 Vertical Circular Popout)
+- **Date/Time**: 2026-10-30 01:45 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-06)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: 3 separate individual circular popouts expanding vertically downwards with accent white/grey background circles
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Vertical Downward Alignment**: PASS — popout aligns directly below the floating button with 10dp margin, expanding downwards in a clean vertical speed-dial cascade.
+  - **Individual Circular Design**: PASS — renders 3 distinct circular buttons (52dp diameter) separated by 18px margins, each with an elevated accent white/grey background circle (#EEF1F5) and drop shadow.
+  - **Power Differentiator**: PASS — Power circle features an accented coral red ring (#EF4444) and red IEC 5009 power symbol.
+  - **Touch Hit-Testing on All 3 Circles**:
+    - Tap Circle 0 (Shot at y=1102): 	akeScreenshot performed, result: true (PASS)
+    - Tap Circle 1 (Vol at y=1282): openVolumePanel executed successfully (PASS)
+    - Tap Circle 2 (Power at y=1462): openPowerDialog performed, result: true (PASS)
+  - **Safe Bounds Adaptation**: PASS — if button is near bottom of display, popout automatically opens upwards to prevent clipping.

@@ -213,21 +213,23 @@ class OverlayManager(
         val screenWidth = displayMetrics.widthPixels
         val screenHeight = displayMetrics.heightPixels
 
-        val popoutWidth = (192 * density).toInt()
-        val popoutHeight = (64 * density).toInt()
+        val popoutWidth = (58 * density).toInt()
+        val popoutHeight = (186 * density).toInt()
         val margin = (10 * density).toInt()
         val btnSize = buttonSizePx
 
-        // Place to left if button is on right half, otherwise place to right
-        val popoutX = if (buttonParams.x + btnSize / 2 >= screenWidth / 2) {
-            buttonParams.x - popoutWidth - margin
-        } else {
-            buttonParams.x + btnSize + margin
-        }.coerceIn(margin, screenWidth - popoutWidth - margin)
+        // Horizontally align popout directly with the floating button
+        val popoutX = (buttonParams.x + (btnSize - popoutWidth) / 2)
+            .coerceIn(margin, screenWidth - popoutWidth - margin)
 
-        // Vertically align popout centered with the floating button
-        val popoutY = (buttonParams.y + (btnSize - popoutHeight) / 2)
-            .coerceIn(margin, screenHeight - popoutHeight - margin)
+        // Expand vertically downwards by default; if near screen bottom, expand upwards
+        val navBarBuffer = (70 * density).toInt()
+        val defaultDownwardsY = buttonParams.y + btnSize + margin
+        val popoutY = if (defaultDownwardsY + popoutHeight <= screenHeight - navBarBuffer) {
+            defaultDownwardsY
+        } else {
+            (buttonParams.y - popoutHeight - margin).coerceAtLeast(margin)
+        }
 
         val params = WindowManager.LayoutParams(
             popoutWidth,

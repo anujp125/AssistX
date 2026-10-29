@@ -583,6 +583,14 @@ Sprint F-05 — Power Menu Action & Popout Enlargement
 - Deliverables: 3-item ActionPopoutView with IEC 5009 power icon, vivid coral red accent, and circular backdrop glow; AssistAccessibilityService.openPowerDialog().
 - Tests/evidence: ActionExecutorTest passing (52 unit tests total, 100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-003: tap Power -> native Realme UI Power/Restart dialog displayed).
 - Status: Passed
+
+Sprint F-06 — Vertical Speed-Dial Circular Popout
+- Priority: P0
+- Depends on: F-05
+- Objective: Transform popout into 3 separate individual circular popout buttons expanding vertically downwards with appropriate margins and accent white/grey background circles.
+- Deliverables: Redesigned ActionPopoutView with individual circle hit testing, cascading drop-down entrance animation, accent silver-grey circular discs (#EEF1F5), and red accent ring for Power; OverlayManager downward vertical positioning.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-004: individual circular buttons expanding downwards, touch detection on all 3 circles).
+- Status: Passed
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status
