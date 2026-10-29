@@ -200,3 +200,24 @@ This document specifies the real-device test execution matrix for physical hardw
     - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
     - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
     - Tap Outside Scrim: `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)
+
+
+### Real-Device Run Log: RD-RUN-008 (Sprint F-10 Smooth Bezier Icons & 10% Size Reduction)
+- **Date/Time**: 2026-10-30 02:54 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-10)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint F-10 — Eliminate edgy/sharp geometry with smooth Bezier curves, round fillets, rounded dome caps, and reduce icon size by an additional 10%
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Smooth Icon Geometry**:
+    - Screenshot Viewfinder: Replaced sharp 90° corner lines with continuous quadratic Bezier rounded fillets (`cornerR = 2.8dp`) framing a smooth rounded pill-cornered smartphone silhouette (`cornerR = 2.6dp`). Zero sharp angles.
+    - Volume Speaker: Replaced sharp polygonal vertices with smooth Bezier flared horn (`quadTo` organic curves) and soft rounded back corners (`r = 1.6dp`), paired with smooth rounded soundwave arcs.
+    - Power IEC 5009 Symbol: 280° smooth arc with hemispherical rounded endpoints and smooth vertical pill stem with dome caps.
+  - **10% Size Reduction**: PASS — icon footprint reduced by 10% (~20-21dp total span inside 54dp circles), achieving an ideal ~38% coverage ratio with balanced negative breathing room.
+  - **Calibrated Boldness & Dark Mode Aesthetic**: PASS — strokes calibrated to `2.3dp–2.4dp` with `Paint.Cap.ROUND` and `Paint.Join.ROUND`, paired with subtle white accent rims and soft coral-red power accents.
+  - **Touch Hit-Testing on All 3 Circles**:
+    - Tap Circle 0 (Screenshot at y=1174): `takeScreenshot performed, result: true` (PASS)
+    - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
+    - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
+    - Tap Outside Scrim (at x=300, y=1000): `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)

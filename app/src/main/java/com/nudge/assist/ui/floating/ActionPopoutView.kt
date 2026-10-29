@@ -17,8 +17,10 @@ import kotlin.math.hypot
 
 /**
  * 3 separate circular popout buttons expanding vertically downwards from the floating button.
- * - Minimalist textless design with bold icons scaled by 20-30% reduction (~22-24dp span).
- * - Screenshot icon: refined viewfinder capture frame framing a smartphone silhouette.
+ * - Minimalist textless design with smooth, organic icons (~20-21dp span, 10% smaller).
+ * - Screenshot icon: smooth rounded viewfinder brackets framing a soft-cornered smartphone silhouette.
+ * - Volume icon: smooth flowing curves and Bezier flared horn with rounded sound wave arcs.
+ * - Power icon: smooth rounded 280° arc with rounded stem dome caps.
  * - Dark mode base with refined low-opacity white accents (Shot/Vol) and soft coral-red accents (Power).
  * - Subtle, elegant accent styling without overly bold/garish color saturations.
  * - Full-screen dismiss scrim: outside touches safely dismiss the menu without activating background apps.
@@ -77,10 +79,10 @@ class ActionPopoutView @JvmOverloads constructor(
         color = Color.argb(45, 255, 255, 255) // Refined subtle white/grey accent rim
     }
 
-    // Bold White Icons for Shot & Vol (reduced 20-30%, crisp and bold)
+    // Bold White Icons for Shot & Vol (smooth curves, calibrated bold weight)
     private val boldWhiteStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.5f * density
+        strokeWidth = 2.3f * density
         color = Color.WHITE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
@@ -99,14 +101,14 @@ class ActionPopoutView @JvmOverloads constructor(
 
     private val redBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 1.4f * density
+        strokeWidth = 1.3f * density
         color = Color.argb(80, 239, 68, 68) // Tasteful coral-red accent rim
     }
 
-    // Bold Red Icon for Power (reduced 20-30%, soft coral accent)
+    // Bold Red Icon for Power (smooth curves, calibrated bold weight)
     private val boldRedStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.6f * density
+        strokeWidth = 2.4f * density
         color = Color.rgb(248, 113, 113) // Soft coral red (#F87171), refined accent
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
@@ -226,7 +228,7 @@ class ActionPopoutView @JvmOverloads constructor(
         val radius = getCircleRadius()
         val points = getCenterPoints()
 
-        // 2. Circle 0: Screenshot [ Refined Viewfinder Frame (20-30% reduced) ]
+        // 2. Circle 0: Screenshot [ Smooth Viewfinder Frame ]
         drawCircularButton(
             canvas = canvas,
             cx = points[0].first,
@@ -235,10 +237,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0f,
             isPower = false
         ) { c, cx, cy ->
-            drawRefinedScreenshotViewfinder(c, cx, cy)
+            drawSmoothScreenshotViewfinder(c, cx, cy)
         }
 
-        // 3. Circle 1: Volume [ Refined Speaker & Sound Waves (20-30% reduced) ]
+        // 3. Circle 1: Volume [ Smooth Speaker & Sound Waves ]
         drawCircularButton(
             canvas = canvas,
             cx = points[1].first,
@@ -247,10 +249,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.1f,
             isPower = false
         ) { c, cx, cy ->
-            drawRefinedVolumeIcon(c, cx, cy)
+            drawSmoothVolumeIcon(c, cx, cy)
         }
 
-        // 4. Circle 2: Power [ Refined Bold Power Symbol (20-30% reduced) ]
+        // 4. Circle 2: Power [ Smooth Bold Power Symbol ]
         drawCircularButton(
             canvas = canvas,
             cx = points[2].first,
@@ -259,7 +261,7 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0.2f,
             isPower = true
         ) { c, cx, cy ->
-            drawRefinedPowerIcon(c, cx, cy)
+            drawSmoothPowerIcon(c, cx, cy)
         }
     }
 
@@ -308,105 +310,142 @@ class ActionPopoutView @JvmOverloads constructor(
     }
 
     /**
-     * Refined Screen Capture Viewfinder icon.
-     * Reduced by ~25% from previous large size (24dp span inside 54dp circle),
-     * maintaining crisp, bold strokes with refined framing.
+     * Smooth Screen Capture Viewfinder icon.
+     * 10% smaller than previous size (21dp span inside 54dp circle),
+     * featuring smooth quadratic Bezier rounded corner brackets framing a smooth rounded phone screen.
      */
-    private fun drawRefinedScreenshotViewfinder(canvas: Canvas, cx: Float, cy: Float) {
-        val halfW = 12f * density // 24dp width span (reduced ~25% from 32dp)
-        val halfH = 12f * density // 24dp height span
-        val armLen = 5.5f * density
+    private fun drawSmoothScreenshotViewfinder(canvas: Canvas, cx: Float, cy: Float) {
+        val halfW = 10.5f * density // 21dp total width span (10% smaller than 24dp)
+        val halfH = 10.5f * density // 21dp total height span
+        val armLen = 5.2f * density
+        val cornerR = 2.8f * density // Smooth rounded fillet radius (zero sharp corners)
 
-        // 4 Viewfinder Corner Brackets
+        // 4 Smooth Viewfinder Corner Brackets with Rounded Bezier Fillets
         // Top-Left ┌
-        canvas.drawLine(cx - halfW, cy - halfH + armLen, cx - halfW, cy - halfH, boldWhiteStroke)
-        canvas.drawLine(cx - halfW, cy - halfH, cx - halfW + armLen, cy - halfH, boldWhiteStroke)
+        val tlPath = Path().apply {
+            moveTo(cx - halfW, cy - halfH + armLen)
+            lineTo(cx - halfW, cy - halfH + cornerR)
+            quadTo(cx - halfW, cy - halfH, cx - halfW + cornerR, cy - halfH)
+            lineTo(cx - halfW + armLen, cy - halfH)
+        }
+        canvas.drawPath(tlPath, boldWhiteStroke)
 
         // Top-Right ┐
-        canvas.drawLine(cx + halfW - armLen, cy - halfH, cx + halfW, cy - halfH, boldWhiteStroke)
-        canvas.drawLine(cx + halfW, cy - halfH, cx + halfW, cy - halfH + armLen, boldWhiteStroke)
+        val trPath = Path().apply {
+            moveTo(cx + halfW - armLen, cy - halfH)
+            lineTo(cx + halfW - cornerR, cy - halfH)
+            quadTo(cx + halfW, cy - halfH, cx + halfW, cy - halfH + cornerR)
+            lineTo(cx + halfW, cy - halfH + armLen)
+        }
+        canvas.drawPath(trPath, boldWhiteStroke)
 
         // Bottom-Left └
-        canvas.drawLine(cx - halfW, cy + halfH - armLen, cx - halfW, cy + halfH, boldWhiteStroke)
-        canvas.drawLine(cx - halfW, cy + halfH, cx - halfW + armLen, cy + halfH, boldWhiteStroke)
+        val blPath = Path().apply {
+            moveTo(cx - halfW, cy + halfH - armLen)
+            lineTo(cx - halfW, cy + halfH - cornerR)
+            quadTo(cx - halfW, cy + halfH, cx - halfW + cornerR, cy + halfH)
+            lineTo(cx - halfW + armLen, cy + halfH)
+        }
+        canvas.drawPath(blPath, boldWhiteStroke)
 
         // Bottom-Right ┘
-        canvas.drawLine(cx + halfW - armLen, cy + halfH, cx + halfW, cy + halfH, boldWhiteStroke)
-        canvas.drawLine(cx + halfW, cy + halfH, cx + halfW, cy + halfH - armLen, boldWhiteStroke)
+        val brPath = Path().apply {
+            moveTo(cx + halfW - armLen, cy + halfH)
+            lineTo(cx + halfW - cornerR, cy + halfH)
+            quadTo(cx + halfW, cy + halfH, cx + halfW, cy + halfH - cornerR)
+            lineTo(cx + halfW, cy + halfH - armLen)
+        }
+        canvas.drawPath(brPath, boldWhiteStroke)
 
-        // Center Smartphone Screen Silhouette
-        val phoneW = 5.5f * density
-        val phoneH = 8.5f * density
+        // Center Smartphone Screen Silhouette with Smooth Rounded Corners
+        val phoneW = 4.8f * density
+        val phoneH = 7.2f * density
         val phoneRect = RectF(cx - phoneW, cy - phoneH, cx + phoneW, cy + phoneH)
         val strokeThin = Paint(boldWhiteStroke).apply {
-            strokeWidth = 1.6f * density
+            strokeWidth = 1.5f * density
         }
-        canvas.drawRoundRect(phoneRect, 2f * density, 2f * density, strokeThin)
+        canvas.drawRoundRect(phoneRect, 2.6f * density, 2.6f * density, strokeThin)
 
-        // Small home-indicator notch bar
+        // Smooth pill home-indicator bar
         canvas.drawLine(
-            cx - (2.5f * density),
-            cy + phoneH - (2f * density),
-            cx + (2.5f * density),
-            cy + phoneH - (2f * density),
+            cx - (1.8f * density),
+            cy + phoneH - (1.8f * density),
+            cx + (1.8f * density),
+            cy + phoneH - (1.8f * density),
             strokeThin
         )
     }
 
     /**
-     * Refined Volume icon.
-     * Reduced by ~25% from previous large size (~24dp total span), bold and well-balanced.
+     * Smooth Volume icon.
+     * 10% smaller than previous size (~21dp span), with organic flowing curves,
+     * smooth Bezier horn flares, and rounded soundwave arcs.
      */
-    private fun drawRefinedVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val shiftLeft = 1.5f * density
+    private fun drawSmoothVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val shiftLeft = 1.2f * density
+        val bodyLeft = cx - (9.5f * density) + shiftLeft
+        val neckX = cx - (5.0f * density) + shiftLeft
+        val mouthX = cx - (0.5f * density) + shiftLeft
+        val neckHalfH = 3.2f * density
+        val mouthHalfH = 8.2f * density
+        val r = 1.6f * density
+
         val path = Path().apply {
-            moveTo(cx - (11f * density) + shiftLeft, cy - (3.8f * density))
-            lineTo(cx - (5.5f * density) + shiftLeft, cy - (3.8f * density))
-            lineTo(cx - (0.8f * density) + shiftLeft, cy - (9.5f * density))
-            lineTo(cx - (0.8f * density) + shiftLeft, cy + (9.5f * density))
-            lineTo(cx - (5.5f * density) + shiftLeft, cy + (3.8f * density))
-            lineTo(cx - (11f * density) + shiftLeft, cy + (3.8f * density))
+            moveTo(bodyLeft + r, cy - neckHalfH)
+            lineTo(neckX, cy - neckHalfH)
+            // Smooth organic flare towards mouth
+            quadTo(neckX + (1.6f * density), cy - neckHalfH, mouthX, cy - mouthHalfH)
+            // Smooth rounded front rim of horn
+            quadTo(mouthX + (1.0f * density), cy, mouthX, cy + mouthHalfH)
+            // Smooth organic flare back down to neck
+            quadTo(neckX + (1.6f * density), cy + neckHalfH, neckX, cy + neckHalfH)
+            lineTo(bodyLeft + r, cy + neckHalfH)
+            // Bottom-left rounded corner
+            quadTo(bodyLeft, cy + neckHalfH, bodyLeft, cy + neckHalfH - r)
+            lineTo(bodyLeft, cy - neckHalfH + r)
+            // Top-left rounded corner
+            quadTo(bodyLeft, cy - neckHalfH, bodyLeft + r, cy - neckHalfH)
             close()
         }
         canvas.drawPath(path, boldWhiteFill)
 
-        // Inner sound wave arc
+        // Inner sound wave arc (smooth rounded cap)
         val arcRectSmall = RectF(
-            cx + (0.5f * density) + shiftLeft,
-            cy - (5.5f * density),
-            cx + (6.5f * density) + shiftLeft,
-            cy + (5.5f * density)
+            mouthX + (1.8f * density),
+            cy - (4.2f * density),
+            mouthX + (6.0f * density),
+            cy + (4.2f * density)
         )
-        canvas.drawArc(arcRectSmall, -45f, 90f, false, boldWhiteStroke)
+        canvas.drawArc(arcRectSmall, -38f, 76f, false, boldWhiteStroke)
 
-        // Outer sound wave arc
+        // Outer sound wave arc (smooth rounded cap)
         val arcRectLarge = RectF(
-            cx + (3.5f * density) + shiftLeft,
-            cy - (10.0f * density),
-            cx + (12.5f * density) + shiftLeft,
-            cy + (10.0f * density)
+            mouthX + (4.6f * density),
+            cy - (8.0f * density),
+            mouthX + (11.2f * density),
+            cy + (8.0f * density)
         )
-        canvas.drawArc(arcRectLarge, -45f, 90f, false, boldWhiteStroke)
+        canvas.drawArc(arcRectLarge, -42f, 84f, false, boldWhiteStroke)
     }
 
     /**
-     * Refined Power icon.
-     * Reduced by ~26.7% from previous large size (22dp diameter inside 54dp circle),
-     * bold with soft coral-red accent color.
+     * Smooth Power icon.
+     * 10% smaller than previous size (19.6dp diameter),
+     * smooth rounded arc ends and rounded vertical center stem.
      */
-    private fun drawRefinedPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val radius = 11f * density // 22dp diameter (~40% of 54dp circle, down from 30dp)
+    private fun drawSmoothPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val radius = 9.8f * density // ~19.6dp diameter (10% smaller than 22dp)
         val arcRect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
 
-        // 270° bold open arc
-        canvas.drawArc(arcRect, -45f, 270f, false, boldRedStroke)
+        // 280° smooth open arc with rounded caps
+        canvas.drawArc(arcRect, -50f, 280f, false, boldRedStroke)
 
-        // Bold vertical center line through open gap
+        // Smooth vertical center stem with rounded dome caps
         canvas.drawLine(
             cx,
-            cy - radius - (2.5f * density),
+            cy - radius - (2.2f * density),
             cx,
-            cy - (1.0f * density),
+            cy - (0.6f * density),
             boldRedStroke
         )
     }
