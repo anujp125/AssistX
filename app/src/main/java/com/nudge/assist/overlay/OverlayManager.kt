@@ -54,11 +54,52 @@ class OverlayManager(
     val isPopoutShowing: Boolean
         get() = popoutView != null
 
+    private var currentSettings = com.nudge.assist.data.OverlaySettings()
+
     private val buttonSizePx: Int
         get() {
             val density = context.resources.displayMetrics.density
-            return (56 * density).toInt()
+            return (currentSettings.buttonSizeDp * density).toInt()
         }
+
+    init {
+        scope.launch {
+            preferences.settingsFlow.collect { settings ->
+                currentSettings = settings
+                applySettings(settings)
+            }
+        }
+    }
+
+    private fun applySettings(settings: com.nudge.assist.data.OverlaySettings) {
+        val view = floatingView ?: return
+        val params = layoutParams ?: return
+        if (!isAttached) return
+
+        val newSizePx = (settings.buttonSizeDp * context.resources.displayMetrics.density).toInt()
+        var needsRelayout = false
+
+        if (params.width != newSizePx || params.height != newSizePx) {
+            params.width = newSizePx
+            params.height = newSizePx
+            needsRelayout = true
+        }
+
+        if (needsRelayout) {
+            try {
+                windowManager.updateViewLayout(view, params)
+            } catch (e: Exception) {
+                // Layout transition
+            }
+        }
+
+        view.updateSettings(
+            idleOpacityPercent = settings.idleOpacityPercent,
+            idleFadeSeconds = settings.idleFadeSeconds,
+            hapticFeedback = settings.hapticFeedbackEnabled,
+            snapToEdge = settings.snapToEdgeEnabled
+        )
+    }
 
     /**
      * Attaches the single floating overlay window if permissions exist and it is not already attached.
@@ -110,6 +151,12 @@ class OverlayManager(
             }
 
             val view = FloatingButtonView(context).apply {
+                updateSettings(
+                    idleOpacityPercent = currentSettings.idleOpacityPercent,
+                    idleFadeSeconds = currentSettings.idleFadeSeconds,
+                    hapticFeedback = currentSettings.hapticFeedbackEnabled,
+                    snapToEdge = currentSettings.snapToEdgeEnabled
+                )
                 listener = object : FloatingButtonView.InteractionListener {
                     override fun onSingleTap() {
                         handleSingleTap()
@@ -248,6 +295,7 @@ class OverlayManager(
         val btnH = (buttonView?.height?.takeIf { it > 0 } ?: buttonSizePx).toFloat()
 
         val popout = ActionPopoutView(context).apply {
+            setDismissDelay(currentSettings.popoutDismissSeconds)
             configureAnchor(
                 btnX = btnX,
                 btnY = btnY,
@@ -325,17 +373,32 @@ class OverlayManager(
         val screenWidth = displayMetrics.widthPixels
         val size = buttonSizePx
 
+        // Clamp Y coordinate inside display bounds
+        val minY = 50
+        val maxY = displayMetrics.heightPixels - size - 50
+        params.y = params.y.coerceIn(minY, maxY)
+
+        if (!currentSettings.snapToEdgeEnabled) {
+            val minX = 0
+            val maxX = screenWidth - size
+            params.x = params.x.coerceIn(minX, maxX)
+            try {
+                windowManager.updateViewLayout(view, params)
+            } catch (e: Exception) {
+                // View may be detaching
+            }
+            scope.launch(Dispatchers.IO) {
+                preferences.savePosition(params.x, params.y)
+            }
+            return
+        }
+
         // Determine nearest edge (left or right)
         val targetX = if (params.x + size / 2 < screenWidth / 2) {
             0
         } else {
             screenWidth - size
         }
-
-        // Clamp Y coordinate inside display bounds
-        val minY = 50
-        val maxY = displayMetrics.heightPixels - size - 50
-        params.y = params.y.coerceIn(minY, maxY)
 
         // Animate snap to edge
         val startX = params.x

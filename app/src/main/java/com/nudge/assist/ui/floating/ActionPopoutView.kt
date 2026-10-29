@@ -145,9 +145,16 @@ class ActionPopoutView @JvmOverloads constructor(
         invalidate()
     }
 
+    private var dismissDelayMs = 4000L
+
+    fun setDismissDelay(seconds: Int) {
+        this.dismissDelayMs = (seconds * 1000L).coerceIn(1000L, 10000L)
+        resetAutoDismissTimer()
+    }
+
     fun resetAutoDismissTimer() {
         handler.removeCallbacks(autoDismissRunnable)
-        handler.postDelayed(autoDismissRunnable, 4000)
+        handler.postDelayed(autoDismissRunnable, dismissDelayMs)
     }
 
     override fun onDetachedFromWindow() {

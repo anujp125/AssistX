@@ -42,9 +42,13 @@ class FloatingButtonView @JvmOverloads constructor(
     private var initialTouchY = 0f
     private var isDragging = false
 
-    private val idleAlpha = 0.75f
+    private var idleAlpha = 0.75f
     private val activeAlpha = 1.0f
     private var currentAlpha = idleAlpha
+    private var idleFadeDelayMs = 3000L
+    private var hapticFeedbackEnabled = true
+    var snapToEdgeEnabled = true
+        private set
 
     private val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -61,12 +65,32 @@ class FloatingButtonView @JvmOverloads constructor(
         color = Color.WHITE
     }
 
+    private fun triggerHaptic() {
+        if (hapticFeedbackEnabled) {
+            performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+    }
+
+    fun updateSettings(
+        idleOpacityPercent: Int,
+        idleFadeSeconds: Int,
+        hapticFeedback: Boolean,
+        snapToEdge: Boolean
+    ) {
+        this.idleAlpha = (idleOpacityPercent / 100f).coerceIn(0.2f, 1.0f)
+        this.idleFadeDelayMs = (idleFadeSeconds * 1000L).coerceIn(1000L, 10000L)
+        this.hapticFeedbackEnabled = hapticFeedback
+        this.snapToEdgeEnabled = snapToEdge
+        updatePaintAlpha(this.idleAlpha)
+    }
+
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(e: MotionEvent): Boolean = true
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             if (!isDragging) {
                 android.util.Log.i("AssistX", "FloatingButtonView: onSingleTapConfirmed")
+                triggerHaptic()
                 listener?.onSingleTap()
                 return true
             }
@@ -75,6 +99,7 @@ class FloatingButtonView @JvmOverloads constructor(
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
             android.util.Log.i("AssistX", "FloatingButtonView: onDoubleTap")
+            triggerHaptic()
             listener?.onDoubleTap()
             return true
         }
@@ -82,6 +107,7 @@ class FloatingButtonView @JvmOverloads constructor(
         override fun onLongPress(e: MotionEvent) {
             if (!isDragging) {
                 android.util.Log.i("AssistX", "FloatingButtonView: onLongPress")
+                triggerHaptic()
                 listener?.onLongPress()
             }
         }
@@ -109,7 +135,7 @@ class FloatingButtonView @JvmOverloads constructor(
 
     private fun scheduleIdleFade() {
         handler.removeCallbacks(idleFadeRunnable)
-        handler.postDelayed(idleFadeRunnable, 3000)
+        handler.postDelayed(idleFadeRunnable, idleFadeDelayMs)
     }
 
     private fun fadeToIdleAlpha() {
@@ -158,6 +184,7 @@ class FloatingButtonView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
+                    triggerHaptic()
                     listener?.onDragReleased()
                 }
                 scheduleIdleFade()

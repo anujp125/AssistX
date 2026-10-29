@@ -25,7 +25,8 @@ class MainActivity : ComponentActivity() {
                     runtimeController = app.runtimeController,
                     permissionAdapter = app.overlayPermissionAdapter,
                     accessibilityAdapter = app.accessibilityAdapter,
-                    diagnosticRecorder = app.diagnosticRecorder
+                    diagnosticRecorder = app.diagnosticRecorder,
+                    userPreferences = app.overlayPreferences
                 ) as T
             }
         }

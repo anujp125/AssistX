@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nudge.assist.accessibility.AccessibilityAdapterContract
+import com.nudge.assist.data.OverlaySettings
+import com.nudge.assist.data.UserPreferencesContract
 import com.nudge.assist.data.diagnostics.DiagnosticEventEntity
 import com.nudge.assist.data.diagnostics.DiagnosticRecorderContract
 import com.nudge.assist.overlay.OverlayPermissionAdapter
@@ -22,11 +24,15 @@ class StudioViewModel(
     val runtimeController: RuntimeController,
     val permissionAdapter: OverlayPermissionAdapter,
     val accessibilityAdapter: AccessibilityAdapterContract,
-    val diagnosticRecorder: DiagnosticRecorderContract
+    val diagnosticRecorder: DiagnosticRecorderContract,
+    val userPreferences: UserPreferencesContract
 ) : ViewModel() {
 
     val snapshot: StateFlow<AppStateSnapshot> = stateCoordinator.state
     val userFacingStatus: StateFlow<UserFacingStatus> = stateCoordinator.userFacingStatus
+
+    val settings: StateFlow<OverlaySettings> = userPreferences.settingsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), OverlaySettings())
 
     val recentDiagnostics: StateFlow<List<DiagnosticEventEntity>> = diagnosticRecorder
         .getRecentEvents(100)
@@ -101,6 +107,48 @@ class StudioViewModel(
     fun onClearDiagnostics() {
         viewModelScope.launch {
             diagnosticRecorder.clearAll()
+        }
+    }
+
+    fun updateButtonSize(sizeDp: Int) {
+        viewModelScope.launch {
+            userPreferences.setButtonSizeDp(sizeDp)
+        }
+    }
+
+    fun updateIdleOpacity(opacityPercent: Int) {
+        viewModelScope.launch {
+            userPreferences.setIdleOpacityPercent(opacityPercent)
+        }
+    }
+
+    fun updateIdleFadeDelay(seconds: Int) {
+        viewModelScope.launch {
+            userPreferences.setIdleFadeSeconds(seconds)
+        }
+    }
+
+    fun updatePopoutDismissDelay(seconds: Int) {
+        viewModelScope.launch {
+            userPreferences.setPopoutDismissSeconds(seconds)
+        }
+    }
+
+    fun updateHapticFeedback(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHapticFeedbackEnabled(enabled)
+        }
+    }
+
+    fun updateSnapToEdge(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setSnapToEdgeEnabled(enabled)
+        }
+    }
+
+    fun resetSettingsToDefault() {
+        viewModelScope.launch {
+            userPreferences.updateSettings(OverlaySettings())
         }
     }
 }

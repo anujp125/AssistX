@@ -60,9 +60,11 @@ class FakeServiceLauncher : ServiceLauncher {
 class FakeUserPreferences : UserPreferencesContract {
     val enabledFlow = MutableStateFlow(false)
     val posFlow = MutableStateFlow(OverlayPosition(-1, -1))
+    val internalSettingsFlow = MutableStateFlow(com.nudge.assist.data.OverlaySettings())
 
     override val desiredEnabledFlow: Flow<Boolean> = enabledFlow
     override val positionFlow: Flow<OverlayPosition> = posFlow
+    override val settingsFlow: Flow<com.nudge.assist.data.OverlaySettings> = internalSettingsFlow
 
     override suspend fun setDesiredEnabled(enabled: Boolean) {
         enabledFlow.value = enabled
@@ -70,6 +72,34 @@ class FakeUserPreferences : UserPreferencesContract {
 
     override suspend fun savePosition(x: Int, y: Int) {
         posFlow.value = OverlayPosition(x, y)
+    }
+
+    override suspend fun updateSettings(settings: com.nudge.assist.data.OverlaySettings) {
+        internalSettingsFlow.value = settings
+    }
+
+    override suspend fun setButtonSizeDp(sizeDp: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(buttonSizeDp = sizeDp)
+    }
+
+    override suspend fun setIdleOpacityPercent(opacityPercent: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(idleOpacityPercent = opacityPercent)
+    }
+
+    override suspend fun setIdleFadeSeconds(seconds: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(idleFadeSeconds = seconds)
+    }
+
+    override suspend fun setPopoutDismissSeconds(seconds: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutDismissSeconds = seconds)
+    }
+
+    override suspend fun setHapticFeedbackEnabled(enabled: Boolean) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(hapticFeedbackEnabled = enabled)
+    }
+
+    override suspend fun setSnapToEdgeEnabled(enabled: Boolean) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(snapToEdgeEnabled = enabled)
     }
 }
 

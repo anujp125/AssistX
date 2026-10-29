@@ -1,4 +1,4 @@
-AssistX — Sprint Plan and Implementation Backlog
+﻿AssistX — Sprint Plan and Implementation Backlog
 Document ID: NUDGE-SPRINT-001
 Version: 0.1
 Status: Approved Backlog
@@ -640,6 +640,14 @@ Sprint F-12 - Custom User Iconography Integration & Dynamic Recoloring
 - Tests/evidence: 52 unit tests passing (100% PASS), clean assembleDebug and assembleRelease builds, verified live on physical Realme Narzo 30 4G (RD-RUN-010: visual verification of white/coral-red icons at 45% button scale, touch hit-testing on Screenshot, Volume, and Power dialogs, downward and upward adaptive layouts).
 - Status: Passed
 
+
+Sprint U-01A - Functional Architecture & Reactive Preferences Engine (Phase 1)
+- Priority: P0
+- Depends on: F-12
+- Objective: Implement all functional requirements for the app UI, including a 3-tab navigation scaffold (Dashboard, Settings, Diagnostics), DataStore user settings expansion (button size, idle opacity, fade delay, popout auto-dismiss delay, haptic feedback, edge snapping), and live real-time overlay reactivity without service restart.
+- Deliverables: Updated UserPreferencesContract.kt, OverlayPreferences.kt, OverlayManager.kt, FloatingButtonView.kt, ActionPopoutView.kt, StudioViewModel.kt, and StudioScreen.kt.
+- Tests/evidence: 54 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-011: verified tab switching across Dashboard, Settings, and Diagnostics; verified dynamic on-screen window resizing between 48dp (144px), 56dp (168px), and 64dp (192px); verified opacity and timing updates).
+- Status: Passed
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

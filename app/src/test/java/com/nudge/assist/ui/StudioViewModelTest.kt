@@ -71,6 +71,7 @@ class StudioViewModelTest {
     private lateinit var permissionAdapter: FakeOverlayPermissionAdapter
     private lateinit var accessibilityAdapter: FakeAccessibilityAdapter
     private lateinit var diagnosticRecorder: FakeDiagnosticRecorder
+    private lateinit var userPreferences: FakeUserPreferences
     private lateinit var runtimeController: RuntimeController
     private lateinit var viewModel: StudioViewModel
     private val testDispatcher = StandardTestDispatcher()
@@ -84,6 +85,7 @@ class StudioViewModelTest {
         permissionAdapter = FakeOverlayPermissionAdapter(OverlayPermissionState.GRANTED)
         accessibilityAdapter = FakeAccessibilityAdapter(settingsEnabled = true, serviceConnected = true)
         diagnosticRecorder = FakeDiagnosticRecorder()
+        userPreferences = FakeUserPreferences()
 
         runtimeController = RuntimeController(
             context = null,
@@ -91,7 +93,7 @@ class StudioViewModelTest {
             overlayManager = overlayManager,
             recoveryPolicy = RecoveryPolicy(),
             permissionAdapter = permissionAdapter,
-            preferences = FakeUserPreferences(),
+            preferences = userPreferences,
             serviceLauncher = FakeServiceLauncher(),
             scope = testScope,
             ioDispatcher = testDispatcher
@@ -102,7 +104,8 @@ class StudioViewModelTest {
             runtimeController = runtimeController,
             permissionAdapter = permissionAdapter,
             accessibilityAdapter = accessibilityAdapter,
-            diagnosticRecorder = diagnosticRecorder
+            diagnosticRecorder = diagnosticRecorder,
+            userPreferences = userPreferences
         )
     }
 
@@ -144,6 +147,43 @@ class StudioViewModelTest {
         advanceUntilIdle()
 
         assertTrue(diagnosticRecorder.recordedEvents.isEmpty())
+    }
+
+    @Test
+    fun testSettingsMutations() = testScope.runTest {
+        viewModel.updateButtonSize(64)
+        viewModel.updateIdleOpacity(50)
+        viewModel.updateIdleFadeDelay(5)
+        viewModel.updatePopoutDismissDelay(6)
+        viewModel.updateHapticFeedback(false)
+        viewModel.updateSnapToEdge(false)
+        advanceUntilIdle()
+
+        val settings = userPreferences.internalSettingsFlow.value
+        assertEquals(64, settings.buttonSizeDp)
+        assertEquals(50, settings.idleOpacityPercent)
+        assertEquals(5, settings.idleFadeSeconds)
+        assertEquals(6, settings.popoutDismissSeconds)
+        assertEquals(false, settings.hapticFeedbackEnabled)
+        assertEquals(false, settings.snapToEdgeEnabled)
+    }
+
+    @Test
+    fun testResetSettingsToDefault() = testScope.runTest {
+        viewModel.updateButtonSize(48)
+        advanceUntilIdle()
+        assertEquals(48, userPreferences.internalSettingsFlow.value.buttonSizeDp)
+
+        viewModel.resetSettingsToDefault()
+        advanceUntilIdle()
+
+        val settings = userPreferences.internalSettingsFlow.value
+        assertEquals(56, settings.buttonSizeDp)
+        assertEquals(75, settings.idleOpacityPercent)
+        assertEquals(3, settings.idleFadeSeconds)
+        assertEquals(4, settings.popoutDismissSeconds)
+        assertEquals(true, settings.hapticFeedbackEnabled)
+        assertEquals(true, settings.snapToEdgeEnabled)
     }
 }
 

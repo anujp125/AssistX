@@ -284,3 +284,30 @@ This document specifies the real-device test execution matrix for physical hardw
       - User icons rendered crisply in upward stack.
     - Dismissal & Scrim:
       - Tap outside popout circle consumed touch and cleanly dismissed popout window without triggering background app elements.
+
+
+### Real-Device Run Log: RD-RUN-011 (Sprint U-01A Phase 1 Functional Dashboard, Settings & Live Reactivity)
+- **Date/Time**: 2026-10-30 04:24 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint U-01A)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint U-01A — Tab navigation scaffold (Dashboard, Settings, Diagnostics), DataStore user settings expansion (button size, idle opacity, idle fade delay, auto-dismiss timeout, haptics, edge snapping), and live real-time overlay reactivity without service restart.
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Tab Navigation Scaffold**:
+    - Smooth switching between Dashboard (`y=2200, x=180`), Settings (`y=2200, x=540`), and Diagnostics (`y=2200, x=840`) without state loss or memory leaks.
+  - **Dashboard Tab**:
+    - Live Master switch verified: toggles `runtimeController.startAssistant()` / `stopAssistant()` and updates status pill.
+    - Subsystem readiness cards accurately reflect Overlay Permission (Granted), Accessibility Service (Connected), and Window (Attached).
+    - Gestures guide displays complete actions (single-tap popout, double-tap lock, long-press home, drag edge-snap).
+  - **Settings Tab & Live Reactive Overlay Sync**:
+    - **Floating Button Sizing**:
+      - Tapped "Compact (48dp)" -> overlay window layout dynamically updated on screen to `144x144px` (`WindowManager.updateViewLayout` verified).
+      - Tapped "Large (64dp)" -> overlay window layout dynamically updated on screen to `192x192px` (`updateViewLayout` verified).
+      - Tapped "Standard (56dp)" -> overlay window returned to default `168x168px`.
+    - **Idle Opacity & Timings**:
+      - Adjusted opacity slider and fade delays; verified DataStore reactive flow collection in `OverlayManager`.
+    - **Behavioral Toggles**:
+      - Haptic feedback and snap-to-edge toggles wired to `FloatingButtonView` interaction loop.
+  - **Diagnostics Tab**:
+    - Displays active PID, runtime state, window state, accessibility connection, and local Room database event log with clear action.
