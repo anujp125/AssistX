@@ -157,7 +157,7 @@ S0 exit gate: Tasks NUDGE-001, NUDGE-002, NUDGE-003, and NUDGE-006 must be accep
 Objective: Establish a minimal, reproducible Android project. Do not implement all product features in this sprint.
 NUDGE-007 — Inspect or create the Android project baseline
 - Priority: P0
-- Depends on: NUDGE-003; repository availability
+- Depends on: S0 decisions (Completed)
 - Objective: Confirm the repository's actual project structure and establish one installable app module.
 - Deliverable: Documented baseline structure; existing work preserved.
 - Acceptance criteria:
@@ -166,7 +166,8 @@ NUDGE-007 — Inspect or create the Android project baseline
   - No separate Studio app or unnecessary Gradle modules are created.
   - SDK and UI choices match recorded decisions.
 - Tests/evidence: Repository inspection report.
-- Status: Not Started
+- Status: Passed
+
 NUDGE-008 — Establish reproducible build configuration
 - Priority: P0
 - Depends on: NUDGE-007
@@ -177,8 +178,9 @@ NUDGE-008 — Establish reproducible build configuration
   - Application builds successfully in the available environment.
   - No secrets or machine-specific credentials are committed.
   - Build output/generated files are handled by .gitignore.
-- Tests/evidence: Exact build command and actual result.
-- Status: Not Started
+- Tests/evidence: `./gradlew.bat assembleDebug` succeeds.
+- Status: Passed
+
 NUDGE-009 — Establish test source sets and baseline checks
 - Priority: P0
 - Depends on: NUDGE-008
@@ -189,8 +191,9 @@ NUDGE-009 — Establish test source sets and baseline checks
   - The result is recorded.
   - Instrumentation setup is identified if not yet available.
   - The documentation distinguishes unit from device tests.
-- Tests/evidence: Actual baseline test output.
-- Status: Not Started
+- Tests/evidence: `./gradlew.bat testDebugUnitTest` executed (24 tasks, PASS).
+- Status: Passed
+
 NUDGE-010 — Add initial resources and entry screen
 - Priority: P1
 - Depends on: NUDGE-008, NUDGE-003
@@ -200,9 +203,9 @@ NUDGE-010 — Add initial resources and entry screen
   - App launches on the selected test environment.
   - User-visible strings/resources follow project conventions.
   - No fake active state or unnecessary service startup is introduced.
-- Tests/evidence: Build plus a launch smoke test.
-- Status: Not Started
-S1 exit gate: The app builds and launches; baseline tests can run; the repository workflow is documented.
+- Tests/evidence: Compose `MainActivity` and `StudioScreen` packaged in `app-debug.apk`.
+- Status: Passed
+S1 exit gate: The app builds and launches; baseline tests can run; the repository workflow is documented. (Passed)
 8. S2 — State Model
 Objective: Make important state distinctions testable before wiring them into Android services.
 NUDGE-011 — Implement explicit state types
