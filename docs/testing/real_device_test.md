@@ -150,3 +150,29 @@ This document specifies the real-device test execution matrix for physical hardw
     - Tap Circle 0 (Shot at y=1102): 	akeScreenshot performed, result: true (PASS)
     - Tap Circle 1 (Vol at y=1282): openVolumePanel executed successfully (PASS)
     - Tap Circle 2 (Power at y=1462): openPowerDialog performed, result: true (PASS)
+
+
+### Real-Device Run Log: RD-RUN-006 (Sprint F-08 Large Icons >60%, Viewfinder Screenshot, Modal Dismiss Scrim)
+- **Date/Time**: 2026-10-30 02:05 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-08)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint F-08 — >60% icon scale, Viewfinder Screenshot icon, and full-screen modal dismiss scrim
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Screenshot Icon Redesign (Viewfinder Frame)**: PASS — replaced camera/Instagram-like shape with official SystemUI 4-corner crop frame `┌ ┐` `└ ┘` framing a sleek smartphone silhouette (`32dp × 32dp`). Eliminates all Instagram resemblance.
+  - **>60% Icon Scale**: PASS — icons scaled to occupy 60%–63% of the 54dp circle diameter:
+    - Viewfinder: `32dp × 32dp` (63% width/height ratio).
+    - Volume: `34dp × 30dp` (63% width ratio, 4.0dp bold acoustic waves).
+    - Power: `30dp` diameter (60% circle space, 4.0dp bold IEC 5009 stroke).
+  - **Modal Dismiss Scrim & Touch Shield**: PASS — `ActionPopoutView` configured with full-screen `MATCH_PARENT × MATCH_PARENT` layout with subtle 18% translucent black veil.
+  - **Touch Interceptor Analysis & Verification**:
+    - **UX Verdict**: Background active touches while a popout is open is confirmed to be a critical usability hazard (causes accidental clicks on underlying apps).
+    - **Action Taken**: Configured touch interception across entire window surface.
+    - **Real-Device Verification**: Tapping outside the 3 circular buttons immediately dismisses the menu and consumes the touch event so background apps receive nothing.
+    - Logcat verified: `ActionPopoutView: Tap outside captured, dismissing popout`.
+  - **Hardware Action Hit-Testing**:
+    - Tap Circle 0 (Screenshot at y=1174): `takeScreenshot performed, result: true` (PASS)
+    - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
+    - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
+    - Tap Outside Scrim (at x=300, y=1000): `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)

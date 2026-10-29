@@ -208,32 +208,12 @@ class OverlayManager(
         if (popoutView != null) return
 
         val buttonParams = layoutParams ?: return
-        val displayMetrics = context.resources.displayMetrics
-        val density = displayMetrics.density
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
 
-        val popoutWidth = (58 * density).toInt()
-        val popoutHeight = (186 * density).toInt()
-        val margin = (10 * density).toInt()
-        val btnSize = buttonSizePx
-
-        // Horizontally align popout directly with the floating button
-        val popoutX = (buttonParams.x + (btnSize - popoutWidth) / 2)
-            .coerceIn(margin, screenWidth - popoutWidth - margin)
-
-        // Expand vertically downwards by default; if near screen bottom, expand upwards
-        val navBarBuffer = (70 * density).toInt()
-        val defaultDownwardsY = buttonParams.y + btnSize + margin
-        val popoutY = if (defaultDownwardsY + popoutHeight <= screenHeight - navBarBuffer) {
-            defaultDownwardsY
-        } else {
-            (buttonParams.y - popoutHeight - margin).coerceAtLeast(margin)
-        }
-
+        // Full-screen touch interceptor window to provide a modal dismiss scrim
+        // and protect background apps from accidental touches while popout is active
         val params = WindowManager.LayoutParams(
-            popoutWidth,
-            popoutHeight,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             } else {
@@ -246,11 +226,16 @@ class OverlayManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = popoutX
-            y = popoutY
+            x = 0
+            y = 0
         }
 
         val popout = ActionPopoutView(context).apply {
+            configureAnchor(
+                btnX = buttonParams.x.toFloat(),
+                btnY = buttonParams.y.toFloat(),
+                btnSize = buttonSizePx.toFloat()
+            )
             listener = object : ActionPopoutView.PopoutListener {
                 override fun onScreenshotClicked() {
                     dismissPopout()

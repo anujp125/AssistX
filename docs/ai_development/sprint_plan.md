@@ -599,6 +599,15 @@ Sprint F-07 — Dark Mode Textless Circular Popout Design
 - Deliverables: Updated ActionPopoutView with dark obsidian charcoal (#16161A) circular bases, low-opacity white accent (rgba(255,255,255,0.12)) with 3.5px bold white icons for Shot/Vol, and low-opacity red accent (rgba(239,68,68,0.18)) with 4.0px bold coral-red power symbol.
 - Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-005: verified textless dark mode popouts, touch detection on all 3 enlarged icons).
 - Status: Passed
+
+Sprint F-08 - >60% Icon Scale, Viewfinder Screenshot Icon, and Modal Dismiss Scrim
+- Priority: P0
+- Depends on: F-07
+- Objective: Scale icons to >60% of button space, redesign Screenshot icon to a viewfinder crop frame (eliminating Instagram camera resemblance), analyze background active state during popout, and implement full-screen modal dismiss scrim.
+- Deliverables: ActionPopoutView with 32dp viewfinder frame framing smartphone silhouette (63%), 34dp volume speaker with dual soundwaves (63%), 30dp power symbol (60%), full-screen modal dismiss scrim (18% black) intercepting touches outside circles to dismiss menu safely without clicking background apps.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-006: verified viewfinder icon, >60% icon scale, tap outside safely dismisses popout, touch hit-testing for all 3 actions).
+- Status: Passed
+
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

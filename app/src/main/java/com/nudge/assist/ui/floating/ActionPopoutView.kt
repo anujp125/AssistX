@@ -16,9 +16,11 @@ import android.view.animation.OvershootInterpolator
 import kotlin.math.hypot
 
 /**
- * 3 separate individual circular popout buttons expanding vertically downwards.
- * Features a minimalist textless design with large bold centered icons, dark mode backgrounds,
- * and low-opacity accents of white for utility shortcuts and coral red for the Power button.
+ * 3 separate circular popout buttons expanding vertically downwards from the floating button.
+ * - Minimalist textless design with bold icons occupying >60% of button space.
+ * - Screenshot icon redesigned as a viewfinder capture frame (no camera/Instagram resemblance).
+ * - Dark mode base with low-opacity white accents (Shot/Vol) and low-opacity red accents (Power).
+ * - Full-screen dismiss scrim: outside touches safely dismiss the menu without activating background apps.
  */
 class ActionPopoutView @JvmOverloads constructor(
     context: Context,
@@ -35,19 +37,31 @@ class ActionPopoutView @JvmOverloads constructor(
 
     var listener: PopoutListener? = null
 
+    private val density = context.resources.displayMetrics.density
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { listener?.onDismissRequested() }
+
+    // Anchor positioning parameters
+    private var anchorX = 0f
+    private var anchorY = 0f
+    private var anchorSize = 56f * density
+
+    // Full-screen subtle scrim
+    private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.BLACK
+    }
 
     // Dark Mode Base Fill
     private val darkBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(235, 22, 22, 26) // Deep dark obsidian charcoal
+        color = Color.argb(235, 20, 20, 24) // Deep obsidian charcoal
     }
 
     // Shadow Paint
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(55, 0, 0, 0)
+        color = Color.argb(60, 0, 0, 0)
     }
 
     // Low-opacity White Accent for Shot & Vol
@@ -58,20 +72,20 @@ class ActionPopoutView @JvmOverloads constructor(
 
     private val whiteBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.5f
-        color = Color.argb(85, 255, 255, 255) // Refined subtle white/grey border ring
+        strokeWidth = 2.5f * density
+        color = Color.argb(85, 255, 255, 255) // Subtle white/grey border ring
     }
 
-    // Large Bold White Icons for Shot & Vol
-    private val boldWhiteIconStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Large Bold White Icons for Shot & Vol (>60% of button space)
+    private val boldWhiteStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 3.5f
+        strokeWidth = 3.6f * density
         color = Color.WHITE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
 
-    private val boldWhiteIconFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val boldWhiteFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = Color.WHITE
     }
@@ -84,14 +98,14 @@ class ActionPopoutView @JvmOverloads constructor(
 
     private val redBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.8f
+        strokeWidth = 2.8f * density
         color = Color.argb(165, 239, 68, 68) // Vibrant coral-red border ring
     }
 
-    // Large Bold Red Icon for Power
-    private val boldRedIconStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Large Bold Red Icon for Power (>60% of button space)
+    private val boldRedStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 4.0f
+        strokeWidth = 4.0f * density
         color = Color.rgb(255, 75, 75) // Vivid coral red (#FF4B4B)
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
@@ -113,6 +127,13 @@ class ActionPopoutView @JvmOverloads constructor(
         resetAutoDismissTimer()
     }
 
+    fun configureAnchor(btnX: Float, btnY: Float, btnSize: Float) {
+        this.anchorX = btnX
+        this.anchorY = btnY
+        this.anchorSize = btnSize
+        invalidate()
+    }
+
     fun resetAutoDismissTimer() {
         handler.removeCallbacks(autoDismissRunnable)
         handler.postDelayed(autoDismissRunnable, 4000)
@@ -123,58 +144,70 @@ class ActionPopoutView @JvmOverloads constructor(
         handler.removeCallbacks(autoDismissRunnable)
     }
 
-    private fun getCircleRadius(): Float {
-        val w = width.toFloat()
-        return (w / 2f) - 6f
-    }
+    private fun getCircleRadius(): Float = 27f * density
 
     private fun getCenterPoints(): Array<Pair<Float, Float>> {
-        val cx = width / 2f
         val radius = getCircleRadius()
+        val margin = 12f * density
+        val spacing = 10f * density
         val diameter = radius * 2f
-        val h = height.toFloat()
 
-        // Distribute 3 circles evenly vertically with appropriate margins
-        val remainingSpace = h - (3f * diameter)
-        val spacing = (remainingSpace / 4f).coerceAtLeast(8f)
+        val btnCenterX = anchorX + (anchorSize / 2f)
+        val cx = btnCenterX.coerceIn(radius + 8f, width - radius - 8f)
 
-        val cy0 = spacing + radius
-        val cy1 = cy0 + diameter + spacing
-        val cy2 = cy1 + diameter + spacing
+        val totalHeight = (3f * diameter) + (2f * spacing)
+        val navBuffer = 80f * density
+        val isExpandingDownwards = (anchorY + anchorSize + margin + totalHeight <= height - navBuffer)
 
-        return arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+        return if (isExpandingDownwards) {
+            val cy0 = anchorY + anchorSize + margin + radius
+            val cy1 = cy0 + diameter + spacing
+            val cy2 = cy1 + diameter + spacing
+            arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+        } else {
+            // Near bottom threshold: expand upwards above the button
+            val cy2 = anchorY - margin - radius
+            val cy1 = cy2 - diameter - spacing
+            val cy0 = cy1 - diameter - spacing
+            arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         resetAutoDismissTimer()
-        if (event.actionMasked == MotionEvent.ACTION_UP) {
-            val touchX = event.x
-            val touchY = event.y
-            val points = getCenterPoints()
-            val touchRadius = getCircleRadius() + 14f
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> return true // Consume touch to shield background apps
+            MotionEvent.ACTION_UP -> {
+                val touchX = event.x
+                val touchY = event.y
+                val points = getCenterPoints()
+                val touchRadius = getCircleRadius() + (14f * density)
 
-            for (i in points.indices) {
-                val (cx, cy) = points[i]
-                if (hypot(touchX - cx, touchY - cy) <= touchRadius) {
-                    when (i) {
-                        0 -> {
-                            android.util.Log.i("AssistX", "ActionPopoutView: Screenshot clicked")
-                            listener?.onScreenshotClicked()
+                for (i in points.indices) {
+                    val (cx, cy) = points[i]
+                    if (hypot(touchX - cx, touchY - cy) <= touchRadius) {
+                        when (i) {
+                            0 -> {
+                                android.util.Log.i("AssistX", "ActionPopoutView: Screenshot clicked")
+                                listener?.onScreenshotClicked()
+                            }
+                            1 -> {
+                                android.util.Log.i("AssistX", "ActionPopoutView: Volume clicked")
+                                listener?.onVolumeClicked()
+                            }
+                            2 -> {
+                                android.util.Log.i("AssistX", "ActionPopoutView: Power clicked")
+                                listener?.onPowerClicked()
+                            }
                         }
-                        1 -> {
-                            android.util.Log.i("AssistX", "ActionPopoutView: Volume clicked")
-                            listener?.onVolumeClicked()
-                        }
-                        2 -> {
-                            android.util.Log.i("AssistX", "ActionPopoutView: Power clicked")
-                            listener?.onPowerClicked()
-                        }
+                        return true
                     }
-                    return true
                 }
+                // Tapped anywhere outside the 3 circles -> safely dismiss popout
+                android.util.Log.i("AssistX", "ActionPopoutView: Tap outside captured, dismissing popout")
+                listener?.onDismissRequested()
+                return true
             }
-            listener?.onDismissRequested()
-            return true
         }
         return true
     }
@@ -185,12 +218,14 @@ class ActionPopoutView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0 || h <= 0) return
 
-        val radius = getCircleRadius()
-        if (radius <= 0) return
+        // 1. Draw subtle full-screen dismiss scrim (18% black)
+        scrimPaint.alpha = (animProgress * 45).toInt().coerceIn(0, 45)
+        canvas.drawRect(0f, 0f, w, h, scrimPaint)
 
+        val radius = getCircleRadius()
         val points = getCenterPoints()
 
-        // 1. Circle 0: Screenshot [ 📸 ]
+        // 2. Circle 0: Screenshot [ Viewfinder Capture Frame ]
         drawCircularButton(
             canvas = canvas,
             cx = points[0].first,
@@ -199,10 +234,10 @@ class ActionPopoutView @JvmOverloads constructor(
             animOffset = 0f,
             isPower = false
         ) { c, cx, cy ->
-            drawLargeCameraIcon(c, cx, cy)
+            drawLargeScreenshotViewfinder(c, cx, cy)
         }
 
-        // 2. Circle 1: Volume [ 🔊 ]
+        // 3. Circle 1: Volume [ Large Speaker & Sound Waves ]
         drawCircularButton(
             canvas = canvas,
             cx = points[1].first,
@@ -214,7 +249,7 @@ class ActionPopoutView @JvmOverloads constructor(
             drawLargeVolumeIcon(c, cx, cy)
         }
 
-        // 3. Circle 2: Power [ ⏻ ] (Accented Coral Red)
+        // 4. Circle 2: Power [ Large Bold IEC 5009 Power Symbol ]
         drawCircularButton(
             canvas = canvas,
             cx = points[2].first,
@@ -246,13 +281,13 @@ class ActionPopoutView @JvmOverloads constructor(
         shadowPaint.alpha = (itemProgress * 65).toInt().coerceIn(0, 65)
 
         // Drop shadow
-        canvas.drawCircle(cx, cy + 3.5f, radius, shadowPaint)
+        canvas.drawCircle(cx, cy + (3.5f * density), radius, shadowPaint)
 
-        // 1. Dark Mode Base Circle
+        // Dark Mode Base Circle
         darkBasePaint.alpha = (itemProgress * 235).toInt().coerceIn(0, 235)
         canvas.drawCircle(cx, cy, radius, darkBasePaint)
 
-        // 2. Specific Low-Opacity Accents
+        // Low-Opacity Specific Accents
         if (isPower) {
             redAccentPaint.alpha = (itemProgress * 45).toInt().coerceIn(0, 45)
             redBorderPaint.alpha = (itemProgress * 165).toInt().coerceIn(0, 165)
@@ -265,53 +300,109 @@ class ActionPopoutView @JvmOverloads constructor(
             canvas.drawCircle(cx, cy, radius, whiteBorderPaint)
         }
 
-        // 3. Large Bold Centered Icon
+        // Large Bold Centered Icon (>60% of button space)
         drawIcon(canvas, cx, cy)
 
         canvas.restore()
     }
 
-    private fun drawLargeCameraIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val bw = 18f
-        val bh = 13.5f
-        val rect = RectF(cx - bw, cy - bh + 2f, cx + bw, cy + bh + 2f)
-        canvas.drawRoundRect(rect, 4.5f, 4.5f, boldWhiteIconStroke)
+    /**
+     * Unmistakable Screen Capture Viewfinder icon (>60% of button space).
+     * Features 4 prominent viewfinder corner crop brackets framing a smartphone display silhouette.
+     */
+    private fun drawLargeScreenshotViewfinder(canvas: Canvas, cx: Float, cy: Float) {
+        val halfW = 16f * density // 32dp width span (~60% of 54dp circle)
+        val halfH = 16f * density // 32dp height span
+        val armLen = 7.5f * density
 
-        // Center Lens
-        canvas.drawCircle(cx, cy + 2f, 5.5f, boldWhiteIconStroke)
+        // 4 Viewfinder Corner Brackets
+        // Top-Left ┌
+        canvas.drawLine(cx - halfW, cy - halfH + armLen, cx - halfW, cy - halfH, boldWhiteStroke)
+        canvas.drawLine(cx - halfW, cy - halfH, cx - halfW + armLen, cy - halfH, boldWhiteStroke)
 
-        // Flash dot
-        canvas.drawCircle(cx - 10f, cy - bh + 6f, 1.8f, boldWhiteIconFill)
+        // Top-Right ┐
+        canvas.drawLine(cx + halfW - armLen, cy - halfH, cx + halfW, cy - halfH, boldWhiteStroke)
+        canvas.drawLine(cx + halfW, cy - halfH, cx + halfW, cy - halfH + armLen, boldWhiteStroke)
+
+        // Bottom-Left └
+        canvas.drawLine(cx - halfW, cy + halfH - armLen, cx - halfW, cy + halfH, boldWhiteStroke)
+        canvas.drawLine(cx - halfW, cy + halfH, cx - halfW + armLen, cy + halfH, boldWhiteStroke)
+
+        // Bottom-Right ┘
+        canvas.drawLine(cx + halfW - armLen, cy + halfH, cx + halfW, cy + halfH, boldWhiteStroke)
+        canvas.drawLine(cx + halfW, cy + halfH, cx + halfW, cy + halfH - armLen, boldWhiteStroke)
+
+        // Center Smartphone Screen Silhouette
+        val phoneW = 7.5f * density
+        val phoneH = 11.5f * density
+        val phoneRect = RectF(cx - phoneW, cy - phoneH, cx + phoneW, cy + phoneH)
+        val strokeThin = Paint(boldWhiteStroke).apply {
+            strokeWidth = 2.2f * density
+        }
+        canvas.drawRoundRect(phoneRect, 2.5f * density, 2.5f * density, strokeThin)
+
+        // Small home-indicator notch bar
+        canvas.drawLine(
+            cx - (3f * density),
+            cy + phoneH - (2.5f * density),
+            cx + (3f * density),
+            cy + phoneH - (2.5f * density),
+            strokeThin
+        )
     }
 
+    /**
+     * Large Bold Volume icon (>60% of button space).
+     */
     private fun drawLargeVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
+        val shiftLeft = 2f * density
         val path = Path().apply {
-            moveTo(cx - 12.5f, cy - 4.5f)
-            lineTo(cx - 7f, cy - 4.5f)
-            lineTo(cx, cy - 11f)
-            lineTo(cx, cy + 11f)
-            lineTo(cx - 7f, cy + 4.5f)
-            lineTo(cx - 12.5f, cy + 4.5f)
+            moveTo(cx - (15f * density) + shiftLeft, cy - (5f * density))
+            lineTo(cx - (8f * density) + shiftLeft, cy - (5f * density))
+            lineTo(cx - (1.5f * density) + shiftLeft, cy - (13.5f * density))
+            lineTo(cx - (1.5f * density) + shiftLeft, cy + (13.5f * density))
+            lineTo(cx - (8f * density) + shiftLeft, cy + (5f * density))
+            lineTo(cx - (15f * density) + shiftLeft, cy + (5f * density))
             close()
         }
-        canvas.drawPath(path, boldWhiteIconFill)
+        canvas.drawPath(path, boldWhiteFill)
 
-        // Sound wave arcs
-        val arcRectSmall = RectF(cx - 2f, cy - 6.5f, cx + 8.5f, cy + 6.5f)
-        canvas.drawArc(arcRectSmall, -45f, 90f, false, boldWhiteIconStroke)
+        // Inner sound wave arc
+        val arcRectSmall = RectF(
+            cx + (1f * density),
+            cy - (7.5f * density),
+            cx + (9.5f * density),
+            cy + (7.5f * density)
+        )
+        canvas.drawArc(arcRectSmall, -45f, 90f, false, boldWhiteStroke)
 
-        val arcRectLarge = RectF(cx + 2.5f, cy - 11.5f, cx + 15.5f, cy + 11.5f)
-        canvas.drawArc(arcRectLarge, -45f, 90f, false, boldWhiteIconStroke)
+        // Outer sound wave arc
+        val arcRectLarge = RectF(
+            cx + (5f * density),
+            cy - (14f * density),
+            cx + (17.5f * density),
+            cy + (14f * density)
+        )
+        canvas.drawArc(arcRectLarge, -45f, 90f, false, boldWhiteStroke)
     }
 
+    /**
+     * Large Bold Power icon (>60% of button space).
+     */
     private fun drawLargePowerIcon(canvas: Canvas, cx: Float, cy: Float) {
-        val radius = 12.5f
+        val radius = 15f * density // 30dp diameter (~60% of 54dp circle)
         val arcRect = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
 
         // 270° bold open arc
-        canvas.drawArc(arcRect, -45f, 270f, false, boldRedIconStroke)
+        canvas.drawArc(arcRect, -45f, 270f, false, boldRedStroke)
 
         // Bold vertical center line through open gap
-        canvas.drawLine(cx, cy - radius - 2.5f, cx, cy - 1f, boldRedIconStroke)
+        canvas.drawLine(
+            cx,
+            cy - radius - (3.5f * density),
+            cx,
+            cy - (1.5f * density),
+            boldRedStroke
+        )
     }
 }
