@@ -221,3 +221,34 @@ This document specifies the real-device test execution matrix for physical hardw
     - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
     - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
     - Tap Outside Scrim (at x=300, y=1000): `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)
+
+
+### Real-Device Run Log: RD-RUN-009 (Sprint F-11 Strict Popout Margin & Adaptive Up/Down Arrangement)
+- **Date/Time**: 2026-10-30 03:17 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-11)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint F-11 — Strict margin enforcement (12dp) between floating button and popout array, eliminate upper/lower distance & collision defects via ground-truth screen coordinates, and implement adaptive up/down arrangement using hardcoded remaining pixel thresholds
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Ground-Truth Screen Coordinates & Inset Cancellation**:
+    - Discovered root cause of prior positioning discrepancies: system status bar / display cutout offsets caused `WindowManager.LayoutParams.y` to differ from window canvas space, adding an artificial ~107px downward shift that pushed popouts too far down when expanding downwards and caused collisions over the floating button when expanding upwards.
+    - Solution: Added `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` to both windows and applied `getLocationOnScreen` on both `floatingView` and `ActionPopoutView`, converting anchor coordinates to local canvas space (`relAnchorY = anchorY - popoutLoc[1]`).
+  - **Strict Margin Enforcement (12dp)**:
+    - Downwards: Distance between floating button bottom edge and Circle 0 top edge is mathematically locked to `strictMargin = 12dp` (36px).
+    - Upwards: Distance between floating button top edge and Circle 0 bottom edge is mathematically locked to `strictMargin = 12dp` (36px). Zero overlap / zero collision.
+  - **Adaptive Up/Down Direction via Remaining Pixels**:
+    - Total downward clearance needed: `strictMargin (12dp) + arrayHeight (182dp) + bottomEdgeBuffer (56dp) = 250dp` (750px).
+    - Total upward clearance needed: `strictMargin (12dp) + arrayHeight (182dp) + topEdgeBuffer (44dp) = 238dp` (714px).
+    - Upper screen test (`btnY = 363px`): `remainingDown (1869px) >= 750px` -> expands **DOWNWARDS** with 12dp strict margin.
+    - Lower screen test (`btnY = 1644px`): `remainingDown (588px) < 750px` -> expands **UPWARDS** with 12dp strict margin.
+  - **Hardware Action Hit-Testing (Both Directions)**:
+    - Downwards Arrangement:
+      - Tap Circle 0 (Screenshot at y=648): `takeScreenshot performed, result: true` (PASS)
+      - Tap Circle 1 (Volume at y=840): `openVolumePanel executed successfully` (PASS)
+      - Tap Outside Scrim: `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)
+    - Upwards Arrangement:
+      - Tap Circle 0 (Screenshot at y=1527): `takeScreenshot performed, result: true` (PASS)
+      - Tap Circle 1 (Volume at y=1335): `openVolumePanel executed successfully` (PASS)
+      - Tap Circle 2 (Power at y=1143): `openPowerDialog performed, result: true` (PASS)
+      - Tap Outside Scrim: `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)

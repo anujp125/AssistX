@@ -1,4 +1,4 @@
-﻿AssistX — Sprint Plan and Implementation Backlog
+AssistX — Sprint Plan and Implementation Backlog
 Document ID: NUDGE-SPRINT-001
 Version: 0.1
 Status: Approved Backlog
@@ -622,6 +622,14 @@ Sprint F-10 - Smooth Bezier Icon Geometry & Additional 10% Size Reduction
 - Objective: Replace edgy/sharp geometry with smooth Bezier curves and rounded fillets, reduce icon footprints by an additional 10% (~20-21dp span), and preserve bold, clean legibility.
 - Deliverables: ActionPopoutView with 21dp smooth viewfinder frame (quadratic Bezier rounded brackets with 2.8dp fillets), 20.2dp smooth volume speaker (organic Bezier flares, rounded back corners, smooth wave arcs), 19.6dp smooth power symbol (rounded 280-degree arc with dome-capped vertical pill stem), stroke widths 2.3dp-2.4dp with Paint.Cap.ROUND and Paint.Join.ROUND.
 - Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-008: verified smooth rounded icons, 10% size reduction, dark mode aesthetics, hit-testing across all 3 actions, tap-outside scrim dismiss).
+- Status: Passed
+
+Sprint F-11 - Strict Popout Margin & Adaptive Up/Down Arrangement
+- Priority: P0
+- Depends on: F-10
+- Objective: Enforce a strict 12dp margin between the floating button and the nearest popout button, eliminate window-origin insetting defects that caused excessive distance downwards and collisions upwards, and adaptively arrange upwards or downwards based on hardcoded remaining pixel thresholds.
+- Deliverables: Updated ActionPopoutView and OverlayManager with LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS, getLocationOnScreen relative coordinate transformation, strict 12dp margin calculation in both directions, and remaining-pixels thresholding (totalSpaceNeededDown 250dp, totalSpaceNeededUp 238dp).
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-009: verified exact 12dp strict margin, downwards expansion at upper screen, upwards expansion at lower screen with zero collision, hit-testing on all actions in both directions).
 - Status: Passed
 
 16. Task Status Table

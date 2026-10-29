@@ -44,10 +44,11 @@ class ActionPopoutView @JvmOverloads constructor(
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { listener?.onDismissRequested() }
 
-    // Anchor positioning parameters
+    // Anchor positioning parameters (screen coordinates and dimensions of floating button)
     private var anchorX = 0f
     private var anchorY = 0f
-    private var anchorSize = 56f * density
+    private var anchorWidth = 56f * density
+    private var anchorHeight = 56f * density
 
     // Full-screen subtle scrim
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -130,10 +131,11 @@ class ActionPopoutView @JvmOverloads constructor(
         resetAutoDismissTimer()
     }
 
-    fun configureAnchor(btnX: Float, btnY: Float, btnSize: Float) {
+    fun configureAnchor(btnX: Float, btnY: Float, btnWidth: Float, btnHeight: Float) {
         this.anchorX = btnX
         this.anchorY = btnY
-        this.anchorSize = btnSize
+        this.anchorWidth = btnWidth
+        this.anchorHeight = btnHeight
         invalidate()
     }
 
@@ -149,29 +151,62 @@ class ActionPopoutView @JvmOverloads constructor(
 
     private fun getCircleRadius(): Float = 27f * density
 
+    /**
+     * Calculates the exact center coordinates for the 3 circular popout buttons.
+     * Enforces a strict margin from the floating button and chooses upward or downward
+     * arrangement based on hardcoded remaining pixel thresholds.
+     */
     private fun getCenterPoints(): Array<Pair<Float, Float>> {
         val radius = getCircleRadius()
-        val margin = 12f * density
-        val spacing = 10f * density
+        val strictMargin = 12f * density // Strict pixel margin between floating button and nearest popup button
+        val itemSpacing = 10f * density  // Strict spacing between adjacent popup buttons
         val diameter = radius * 2f
 
-        val btnCenterX = anchorX + (anchorSize / 2f)
-        val cx = btnCenterX.coerceIn(radius + 8f, width - radius - 8f)
+        // Convert anchor screen coordinates to local view coordinates to cancel any window insets/cutout offsets
+        val popoutLoc = IntArray(2)
+        getLocationOnScreen(popoutLoc)
+        val relAnchorX = anchorX - popoutLoc[0]
+        val relAnchorY = anchorY - popoutLoc[1]
 
-        val totalHeight = (3f * diameter) + (2f * spacing)
-        val navBuffer = 80f * density
-        val isExpandingDownwards = (anchorY + anchorSize + margin + totalHeight <= height - navBuffer)
+        val btnCenterX = relAnchorX + (anchorWidth / 2f)
+        val minX = radius + (8f * density)
+        val maxX = (if (width > 0) width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()) - radius - (8f * density)
+        val cx = btnCenterX.coerceIn(minX, maxX)
+
+        // Array height: 3 buttons (54dp each) + 2 spacing gaps (10dp each) = 182dp
+        val arrayHeight = (3f * diameter) + (2f * itemSpacing)
+
+        // Hardcoded edge buffers for comfortable margins in either direction
+        val topEdgeBuffer = 44f * density // Top safe buffer (clears status bar & display cutout)
+        val bottomEdgeBuffer = 56f * density // Bottom safe buffer (clears navigation bar & gesture pill)
+
+        val totalSpaceNeededDown = strictMargin + arrayHeight + bottomEdgeBuffer
+        val totalSpaceNeededUp = strictMargin + arrayHeight + topEdgeBuffer
+
+        val screenH = if (height > 0) height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
+        val buttonBottom = relAnchorY + anchorHeight
+        val buttonTop = relAnchorY
+
+        val remainingDown = screenH - buttonBottom
+        val remainingUp = buttonTop
+
+        val isExpandingDownwards = when {
+            remainingDown >= totalSpaceNeededDown -> true
+            remainingUp >= totalSpaceNeededUp -> false
+            else -> remainingDown >= remainingUp
+        }
 
         return if (isExpandingDownwards) {
-            val cy0 = anchorY + anchorSize + margin + radius
-            val cy1 = cy0 + diameter + spacing
-            val cy2 = cy1 + diameter + spacing
+            // Arrange downwards: Circle 0 is strictMargin below button, Circle 1 next, Circle 2 lowest
+            val cy0 = buttonBottom + strictMargin + radius
+            val cy1 = cy0 + diameter + itemSpacing
+            val cy2 = cy1 + diameter + itemSpacing
             arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
         } else {
-            // Near bottom threshold: expand upwards above the button
-            val cy2 = anchorY - margin - radius
-            val cy1 = cy2 - diameter - spacing
-            val cy0 = cy1 - diameter - spacing
+            // Arrange upwards: Circle 0 is strictMargin above button, Circle 1 next, Circle 2 highest
+            val cy0 = buttonTop - strictMargin - radius
+            val cy1 = cy0 - diameter - itemSpacing
+            val cy2 = cy1 - diameter - itemSpacing
             arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
         }
     }

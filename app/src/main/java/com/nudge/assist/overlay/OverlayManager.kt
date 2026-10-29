@@ -102,6 +102,9 @@ class OverlayManager(
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.START
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                }
                 x = defaultX
                 y = defaultY
             }
@@ -226,15 +229,30 @@ class OverlayManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            }
             x = 0
             y = 0
         }
 
+        val location = IntArray(2)
+        val buttonView = floatingView
+        val (btnX, btnY) = if (buttonView != null && buttonView.isAttachedToWindow) {
+            buttonView.getLocationOnScreen(location)
+            Pair(location[0].toFloat(), location[1].toFloat())
+        } else {
+            Pair(buttonParams.x.toFloat(), buttonParams.y.toFloat())
+        }
+        val btnW = (buttonView?.width?.takeIf { it > 0 } ?: buttonSizePx).toFloat()
+        val btnH = (buttonView?.height?.takeIf { it > 0 } ?: buttonSizePx).toFloat()
+
         val popout = ActionPopoutView(context).apply {
             configureAnchor(
-                btnX = buttonParams.x.toFloat(),
-                btnY = buttonParams.y.toFloat(),
-                btnSize = buttonSizePx.toFloat()
+                btnX = btnX,
+                btnY = btnY,
+                btnWidth = btnW,
+                btnHeight = btnH
             )
             listener = object : ActionPopoutView.PopoutListener {
                 override fun onScreenshotClicked() {
