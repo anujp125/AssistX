@@ -176,3 +176,27 @@ This document specifies the real-device test execution matrix for physical hardw
     - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
     - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
     - Tap Outside Scrim (at x=300, y=1000): `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)
+
+
+### Real-Device Run Log: RD-RUN-007 (Sprint F-09 Refined Icon Proportion, Boldness, and Dark Mode Accents)
+- **Date/Time**: 2026-10-30 02:18 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint F-09)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint F-09 — 20-30% icon size reduction, bold stroke calibration, refined dark mode base with subtle/non-heavy white and coral red accents
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **20-30% Icon Reduction**: PASS — icon bounding boxes reduced from 30dp–34dp to 22dp–24dp (~25% reduction), creating elegant negative space within the 54dp circles:
+    - Viewfinder Frame: reduced from 32dp to 24dp (25% reduction).
+    - Volume Speaker + Soundwaves: reduced from 34dp to 24dp (29% reduction).
+    - Power IEC 5009 Symbol: reduced from 30dp to 22dp (26.7% reduction).
+  - **Retained Boldness**: PASS — strokes calibrated to 2.5dp–2.6dp (main strokes) and 1.6dp (silhouette) ensuring crisp, high-contrast visibility on real AMOLED/LCD displays without blur or crowding.
+  - **Dark Mode Background & Refined Accents**:
+    - Obsidian dark mode base (`#16161A`, 240 alpha).
+    - Screenshot/Volume: subtle white accent glow (18 alpha) + refined accent rim (`1.3dp`, 45 alpha).
+    - Power: soft coral-red accent wash (`#F87171`, 25 alpha) + refined accent rim (`1.4dp`, 80 alpha), eliminating garish heavy saturation while remaining clearly distinct.
+  - **Touch Hit-Testing on All 3 Circles**:
+    - Tap Circle 0 (Screenshot at y=1174): `takeScreenshot performed, result: true` (PASS)
+    - Tap Circle 1 (Volume at y=1366): `openVolumePanel executed successfully` (PASS)
+    - Tap Circle 2 (Power at y=1558): `openPowerDialog performed, result: true` (PASS)
+    - Tap Outside Scrim: `ActionPopoutView: Tap outside captured, dismissing popout` (PASS)

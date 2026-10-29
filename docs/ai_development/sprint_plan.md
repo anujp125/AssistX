@@ -608,6 +608,14 @@ Sprint F-08 - >60% Icon Scale, Viewfinder Screenshot Icon, and Modal Dismiss Scr
 - Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-006: verified viewfinder icon, >60% icon scale, tap outside safely dismisses popout, touch hit-testing for all 3 actions).
 - Status: Passed
 
+Sprint F-09 - Icon Proportion Reduction (20-30%), Bold Stroke Calibration, and Dark Mode Accents
+- Priority: P0
+- Depends on: F-08
+- Objective: Reduce icon size by 20-30% (~22-24dp span inside 54dp circles), maintain bold strokes, refine dark mode button base, and soften white and red accents so they are not overly bold.
+- Deliverables: ActionPopoutView with 24dp viewfinder frame (25% reduction), 24dp volume speaker with dual soundwaves (29% reduction), 22dp power symbol (26.7% reduction), 2.5dp-2.6dp bold stroke weight, dark obsidian base (#16161A), subtle white accent rim (1.3dp, 45 alpha), and soft coral-red accent rim (1.4dp, 80 alpha).
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-007: verified 20-30% reduced bold icons, dark mode aesthetics, hit-testing across all 3 actions, tap-outside scrim dismiss).
+- Status: Passed
+
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status
