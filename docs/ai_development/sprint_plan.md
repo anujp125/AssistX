@@ -212,39 +212,41 @@ NUDGE-011 — Implement explicit state types
 - Priority: P0
 - Depends on: NUDGE-006, NUDGE-008
 - Objective: Implement the smallest state representation needed for desired state, overlay permission/attachment, runtime, and conditional Accessibility.
-- Deliverable: State types in the approved package.
+- Deliverable: `StateTypes.kt` in package `com.nudge.assist.state`.
 - Acceptance criteria:
   - Desired state is separate from observed runtime/overlay state.
   - Accessibility state is separate and conditional.
   - Unknown/unobserved conditions can be represented.
   - No single isRunning boolean replaces the state model.
-- Tests/evidence: Unit tests for valid state values and defaults.
-- Status: Not Started
+- Tests/evidence: `StateModelTest` (3 tests, PASS).
+- Status: Passed
+
 NUDGE-012 — Implement derived status mapping
 - Priority: P0
 - Depends on: NUDGE-011
 - Objective: Derive the user-facing status from the underlying state dimensions.
-- Deliverable: Small, deterministic status-mapping function/policy.
+- Deliverable: `StatusEvaluator.kt` pure mapping function and `UserFacingStatus` enum.
 - Acceptance criteria:
   - Missing overlay permission cannot map to Active.
   - Required-but-disabled Accessibility cannot map to fully ready.
   - Unknown observations do not become success states.
   - Secondary component details are not lost.
-- Tests/evidence: Unit tests for priority, combined blockers, and unknown cases.
-- Status: Not Started
+- Tests/evidence: `StatusEvaluatorTest` (11 tests, PASS).
+- Status: Passed
+
 NUDGE-013 — Test state invariants and transitions
 - Priority: P0
 - Depends on: NUDGE-011, NUDGE-012
 - Objective: Protect state semantics before platform integration.
-- Deliverable: Unit tests.
+- Deliverable: `StateCoordinator.kt` and `StateCoordinatorTest.kt`.
 - Acceptance criteria:
   - Explicit Disable suppresses recovery decisions.
   - An enable request does not automatically mean startup succeeded.
   - Overlay and Accessibility states can vary independently.
   - Conflicting/stale observations are handled according to the approved policy.
-- Tests/evidence: Executed state test command and results.
-- Status: Not Started
-S2 exit gate: Core state mapping and invariants have passing unit-test evidence.
+- Tests/evidence: `StateCoordinatorTest` (6 tests, PASS). Overall 22 unit tests passing.
+- Status: Passed
+S2 exit gate: Core state mapping and invariants have passing unit-test evidence. (Passed)
 9. S3 — Floating Overlay Vertical Slice
 Objective: Deliver one permission-aware floating button with predictable attach/remove behavior.
 NUDGE-014 — Implement overlay permission adapter
