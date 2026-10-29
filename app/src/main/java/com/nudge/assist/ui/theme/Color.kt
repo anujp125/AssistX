@@ -13,4 +13,5 @@ val Pink40 = Color(0xFF7D5260)
 val StatusGreen = Color(0xFF4CAF50)
 val StatusAmber = Color(0xFFFF9800)
 val StatusRed = Color(0xFFF44336)
+val StatusBlue = Color(0xFF2196F3)
 
