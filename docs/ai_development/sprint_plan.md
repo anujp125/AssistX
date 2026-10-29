@@ -537,7 +537,64 @@ NUDGE-034 — Complete release checklist and owner sign-off
 - Tests/evidence: Release candidate produced; all sprint exit gates S1-S8 Passed.
 - Status: Passed
 S8 exit gate: No public/private distribution occurs until the owner approves the target artifact, packaging, signing, documentation, and known limitations. (Passed)
-15. Task Status Table
+
+15. Feature Sprints Roadmap (Post-v0.1 MVP Extension)
+Governed by NUDGE_AGENT_EXECUTION_PLAYBOOK.md.
+
+Sprint F-01 — Baseline Audit and Regression Harness
+- Priority: P0 (Mandatory first sprint)
+- Depends on: S1-S8 completion
+- Objective: Inventory and lock down the verified working baseline (overlay, double-tap lock, long-press home, drag & edge-snap, idle fade, Room diagnostics) before adding new actions.
+- Deliverables: Pre-change baseline report, PRODUCT_DECISIONS_CHECKLIST.md, and verified test execution records.
+- Tests/evidence: 49 automated unit tests passing (100%), verified live on Realme Narzo 30 4G (RD-RUN-001) and emulator (RUN-EMU-001).
+- Status: Passed
+
+Sprint F-02 — Dedicated Back Action
+- Priority: P0
+- Depends on: F-01
+- Objective: Add a dedicated Back action to the floating button interaction model.
+- Capability: AccessibilityService.GLOBAL_ACTION_BACK
+- Status: Ready for Run
+
+Sprint F-03 — Recent Apps Switcher
+- Priority: P0
+- Depends on: F-02
+- Objective: Add a user-invoked path to Android's native Recents overview UI.
+- Capability: AccessibilityService.GLOBAL_ACTION_RECENTS
+- Status: Planned
+
+Sprint F-04 — Screenshot Capture
+- Priority: P0
+- Depends on: F-03
+- Objective: Trigger native system screenshot action with zero media projection dialogs.
+- Capability: AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT (API 28+)
+- Status: Planned
+
+Sprint F-05 — Volume Controls
+- Priority: P1
+- Depends on: F-04
+- Objective: Trigger official system volume slider on user request.
+- Capability: AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)
+- Status: Planned
+
+Sprint F-06 — Floating-Button Action Menu / Interaction Redesign
+- Priority: P0
+- Depends on: F-02, F-03, F-04, F-05
+- Objective: Provide an expandable, accessible action panel for secondary actions without accidental triggers.
+- Status: Planned
+
+Sprint F-07 — Reliability and Recovery Hardening
+- Priority: P0
+- Depends on: F-06
+- Objective: Harden permission revoke detection, OEM lifecycle restarts, and diagnostic pruning under stress.
+- Status: Planned
+
+Sprint F-08 — Accessibility, Usability, and Final Hardware Regression
+- Priority: P0
+- Depends on: F-07
+- Objective: Full physical-device regression across all actions on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
+- Status: Planned
+16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status
 NUDGE-001	Review and approve MVP scope	P0	Product docs	Ready for owner review
@@ -576,7 +633,7 @@ NUDGE-033	Release build/signing validation	P1	NUDGE-004, 008, 030	Blocked
 NUDGE-034	Release checklist/owner sign-off	P1	NUDGE-032, 033	Not Started
 
 
-16. Per-Task Execution Contract
+17. Per-Task Execution Contract
 Before assigning any task:
 1. Copy its entry into a task-specific file using SPRINT_TASK_TEMPLATE.md.
 2. Read AGENTS.md and AI_AGENT_WORKFLOW.md.
@@ -590,7 +647,7 @@ After implementation:
 3. Report exact results and unrun tests.
 4. Update status and requirement-to-test traceability.
 5. Request review before marking dependent work ready.
-17. Backlog Change Rules
+18. Backlog Change Rules
 - Do not silently reorder tasks if the change weakens an exit gate.
 - A dependency may be changed when implementation evidence or verified platform requirements justify it; record the reason.
 - New user-facing features, permissions, major dependencies, network capability, service strategies, or architecture changes require owner approval.
@@ -598,7 +655,7 @@ After implementation:
 - Deferred tasks must retain a reason and must not be counted as completed.
 - When a task is split, keep the parent objective and traceability visible and assign unique child task IDs.
 - When a decision makes a conditional task unnecessary, mark it NOT APPLICABLE with a link to the approved decision; do not delete the traceability entry.
-18. Overall v0.1 Definition of Done
+19. Overall v0.1 Definition of Done
 AssistX v0.1 is ready for owner acceptance only when:
 - the single-app product scope and primary action are approved;
 - the application builds using documented steps;
@@ -612,7 +669,7 @@ AssistX v0.1 is ready for owner acceptance only when:
 - critical defects are resolved;
 - setup, troubleshooting, privacy, compatibility, and release documents match actual behavior;
 - the release artifact and distribution method are approved by the owner.
-19. Owner Review and Approval
+20. Owner Review and Approval
 - Product owner: Anuj Pawar (@anujp125)
 - Roadmap/backlog status: Approved
 - Approved primary action: Double-tap lock screen (GLOBAL_ACTION_LOCK_SCREEN); Long-press home/back (GLOBAL_ACTION_HOME/BACK)
