@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">AssistX</string>
+    <string name="accessibility_service_label">AssistX Accessibility Service</string>
+    <string name="accessibility_service_description">Provides assistive actions to lock the screen and navigate back/home on demand.</string>
+    <string name="notification_channel_name">AssistX Service Status</string>
+    <string name="notification_channel_desc">Shows ongoing status for AssistX floating button.</string>
+    <string name="notification_title">AssistX is active</string>
+    <string name="notification_content">Floating assistant is running.</string>
+</resources>
+
