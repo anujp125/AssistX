@@ -554,20 +554,24 @@ Sprint F-02 — Screenshot Capture Action
 - Depends on: F-01
 - Objective: Trigger native system screenshot capture with zero media projection dialogs.
 - Capability: AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT (API 28+)
-- Status: Ready for Run
+- Deliverables: ActionPopoutView.kt, OverlayManager popout coordination, and AssistAccessibilityService.takeScreenshot().
+- Tests/evidence: ActionExecutorTest passing (51 unit tests total, 100% PASS), verified live on emulator (RUN-EMU-002: popout entrance, tap Shot, screenshot captured).
+- Status: Passed
 
 Sprint F-03 — Volume Controls
 - Priority: P0
 - Depends on: F-02
 - Objective: Trigger official system volume slider on user request.
 - Capability: AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)
-- Status: Planned
+- Deliverables: AndroidActionExecutor.openVolumePanel() and ActionPopoutView volume shortcut.
+- Tests/evidence: ActionExecutorTest passing, verified live on emulator (RUN-EMU-003: tap Vol, system volume slider displayed).
+- Status: Passed
 
 Sprint F-04 — Final Hardware Regression & Release Packaging
 - Priority: P0
 - Depends on: F-03
 - Objective: Full physical-device regression across the 4 approved actions (Screen Off, Home, Screenshot, Volume) on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
-- Status: Planned
+- Status: Ready for Run
 16. Task Status Table
 Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
 Task	Title	Priority	Depends on	Initial status

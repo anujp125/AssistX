@@ -16,6 +16,7 @@ import com.nudge.assist.service.AssistAccessibilityService
 import com.nudge.assist.state.OverlayPermissionState
 import com.nudge.assist.state.OverlayState
 import com.nudge.assist.state.StateCoordinator
+import com.nudge.assist.ui.floating.ActionPopoutView
 import com.nudge.assist.ui.floating.FloatingButtonView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +36,7 @@ class OverlayManager(
     private val stateCoordinator: StateCoordinator,
     private val permissionAdapter: OverlayPermissionAdapter = AndroidOverlayPermissionAdapter(),
     private val preferences: UserPreferencesContract = OverlayPreferences(context),
-    private val actionExecutor: ActionExecutorContract = AndroidActionExecutor(),
+    private val actionExecutor: ActionExecutorContract = AndroidActionExecutor(context),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) : OverlayManagerContract {
 
@@ -43,9 +44,15 @@ class OverlayManager(
     private var floatingView: FloatingButtonView? = null
     private var layoutParams: WindowManager.LayoutParams? = null
 
+    private var popoutView: ActionPopoutView? = null
+    private var popoutLayoutParams: WindowManager.LayoutParams? = null
+
     @Volatile
     override var isAttached: Boolean = false
         private set
+
+    val isPopoutShowing: Boolean
+        get() = popoutView != null
 
     private val buttonSizePx: Int
         get() {
@@ -101,15 +108,22 @@ class OverlayManager(
 
             val view = FloatingButtonView(context).apply {
                 listener = object : FloatingButtonView.InteractionListener {
+                    override fun onSingleTap() {
+                        handleSingleTap()
+                    }
+
                     override fun onDoubleTap() {
+                        dismissPopout()
                         handleDoubleTap()
                     }
 
                     override fun onLongPress() {
+                        dismissPopout()
                         handleLongPress()
                     }
 
                     override fun onDragMoved(deltaX: Float, deltaY: Float) {
+                        dismissPopout()
                         handleDragMoved(deltaX, deltaY)
                     }
 
@@ -142,6 +156,8 @@ class OverlayManager(
      * Removes the floating overlay window from WindowManager.
      */
     override fun detachOverlay(): Boolean {
+        dismissPopout()
+
         if (!isAttached || floatingView == null) {
             stateCoordinator.updateOverlayState(OverlayState.DETACHED)
             return true
@@ -165,17 +181,117 @@ class OverlayManager(
         }
     }
 
-    private fun handleDoubleTap() {
-        // Primary Action: Lock Screen via Accessibility Service
-        val locked = actionExecutor.lockScreen()
-        if (!locked) {
-            // Note: If accessibility is unlinked, status remains truthful in coordinator
+    private fun handleSingleTap() {
+        android.util.Log.i("AssistX", "OverlayManager: handleSingleTap called, popoutView=$popoutView")
+        if (popoutView != null) {
+            dismissPopout()
+        } else {
+            showPopout()
         }
     }
 
+    private fun handleDoubleTap() {
+        // Primary Action: Lock Screen via Accessibility Service
+        actionExecutor.lockScreen()
+    }
+
     private fun handleLongPress() {
-        // Navigation Action: Go Home / Back via Accessibility Service
+        // Navigation Action: Go Home via Accessibility Service
         actionExecutor.performHome()
+    }
+
+    /**
+     * Displays the 2-action popout pill [ 📸 Shot ] and [ 🔊 Vol ] adjacent to the floating button.
+     */
+    fun showPopout() {
+        if (!isAttached || floatingView == null) return
+        if (popoutView != null) return
+
+        val buttonParams = layoutParams ?: return
+        val displayMetrics = context.resources.displayMetrics
+        val density = displayMetrics.density
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+
+        val popoutWidth = (116 * density).toInt()
+        val popoutHeight = (54 * density).toInt()
+        val margin = (10 * density).toInt()
+        val btnSize = buttonSizePx
+
+        // Place to left if button is on right half, otherwise place to right
+        val popoutX = if (buttonParams.x + btnSize / 2 >= screenWidth / 2) {
+            buttonParams.x - popoutWidth - margin
+        } else {
+            buttonParams.x + btnSize + margin
+        }.coerceIn(margin, screenWidth - popoutWidth - margin)
+
+        // Vertically align popout centered with the floating button
+        val popoutY = (buttonParams.y + (btnSize - popoutHeight) / 2)
+            .coerceIn(margin, screenHeight - popoutHeight - margin)
+
+        val params = WindowManager.LayoutParams(
+            popoutWidth,
+            popoutHeight,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            },
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = popoutX
+            y = popoutY
+        }
+
+        val popout = ActionPopoutView(context).apply {
+            listener = object : ActionPopoutView.PopoutListener {
+                override fun onScreenshotClicked() {
+                    dismissPopout()
+                    // Allow popout removal to finish before taking screenshot
+                    floatingView?.postDelayed({
+                        actionExecutor.takeScreenshot()
+                    }, 150)
+                }
+
+                override fun onVolumeClicked() {
+                    dismissPopout()
+                    actionExecutor.openVolumePanel()
+                }
+
+                override fun onDismissRequested() {
+                    dismissPopout()
+                }
+            }
+        }
+
+        try {
+            windowManager.addView(popout, params)
+            popoutView = popout
+            popoutLayoutParams = params
+        } catch (e: Exception) {
+            popoutView = null
+            popoutLayoutParams = null
+        }
+    }
+
+    /**
+     * Dismisses the action popout pill if currently showing.
+     */
+    fun dismissPopout() {
+        val popout = popoutView ?: return
+        try {
+            windowManager.removeView(popout)
+        } catch (e: Exception) {
+            // View might already be detached
+        } finally {
+            popoutView = null
+            popoutLayoutParams = null
+        }
     }
 
     private fun handleDragMoved(deltaX: Float, deltaY: Float) {
@@ -252,4 +368,3 @@ class OverlayManager(
         }
     }
 }
-

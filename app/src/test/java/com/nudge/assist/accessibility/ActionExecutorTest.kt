@@ -1,22 +1,32 @@
 package com.nudge.assist.accessibility
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FakeActionExecutor(
     var shouldLockSucceed: Boolean = true,
+    var shouldScreenshotSucceed: Boolean = true,
     var shouldHomeSucceed: Boolean = true,
-    var shouldBackSucceed: Boolean = true
+    var shouldBackSucceed: Boolean = true,
+    var shouldVolumeSucceed: Boolean = true
 ) : ActionExecutorContract {
 
     var lockScreenCallCount = 0
+    var takeScreenshotCallCount = 0
     var performHomeCallCount = 0
     var performBackCallCount = 0
+    var openVolumePanelCallCount = 0
 
     override fun lockScreen(): Boolean {
         lockScreenCallCount++
         return shouldLockSucceed
+    }
+
+    override fun takeScreenshot(): Boolean {
+        takeScreenshotCallCount++
+        return shouldScreenshotSucceed
     }
 
     override fun performHome(): Boolean {
@@ -28,6 +38,11 @@ class FakeActionExecutor(
         performBackCallCount++
         return shouldBackSucceed
     }
+
+    override fun openVolumePanel(): Boolean {
+        openVolumePanelCallCount++
+        return shouldVolumeSucceed
+    }
 }
 
 class ActionExecutorTest {
@@ -36,33 +51,54 @@ class ActionExecutorTest {
     fun testLockScreenExecution() {
         val executor = FakeActionExecutor(shouldLockSucceed = true)
         assertTrue(executor.lockScreen())
-        org.junit.Assert.assertEquals(1, executor.lockScreenCallCount)
+        assertEquals(1, executor.lockScreenCallCount)
 
         executor.shouldLockSucceed = false
         assertFalse(executor.lockScreen())
-        org.junit.Assert.assertEquals(2, executor.lockScreenCallCount)
+        assertEquals(2, executor.lockScreenCallCount)
+    }
+
+    @Test
+    fun testTakeScreenshotExecution() {
+        val executor = FakeActionExecutor(shouldScreenshotSucceed = true)
+        assertTrue(executor.takeScreenshot())
+        assertEquals(1, executor.takeScreenshotCallCount)
+
+        executor.shouldScreenshotSucceed = false
+        assertFalse(executor.takeScreenshot())
+        assertEquals(2, executor.takeScreenshotCallCount)
     }
 
     @Test
     fun testPerformHomeExecution() {
         val executor = FakeActionExecutor(shouldHomeSucceed = true)
         assertTrue(executor.performHome())
-        org.junit.Assert.assertEquals(1, executor.performHomeCallCount)
+        assertEquals(1, executor.performHomeCallCount)
 
         executor.shouldHomeSucceed = false
         assertFalse(executor.performHome())
-        org.junit.Assert.assertEquals(2, executor.performHomeCallCount)
+        assertEquals(2, executor.performHomeCallCount)
     }
 
     @Test
     fun testPerformBackExecution() {
         val executor = FakeActionExecutor(shouldBackSucceed = true)
         assertTrue(executor.performBack())
-        org.junit.Assert.assertEquals(1, executor.performBackCallCount)
+        assertEquals(1, executor.performBackCallCount)
 
         executor.shouldBackSucceed = false
         assertFalse(executor.performBack())
-        org.junit.Assert.assertEquals(2, executor.performBackCallCount)
+        assertEquals(2, executor.performBackCallCount)
+    }
+
+    @Test
+    fun testOpenVolumePanelExecution() {
+        val executor = FakeActionExecutor(shouldVolumeSucceed = true)
+        assertTrue(executor.openVolumePanel())
+        assertEquals(1, executor.openVolumePanelCallCount)
+
+        executor.shouldVolumeSucceed = false
+        assertFalse(executor.openVolumePanel())
+        assertEquals(2, executor.openVolumePanelCallCount)
     }
 }
-

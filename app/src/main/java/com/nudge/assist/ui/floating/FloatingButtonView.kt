@@ -25,6 +25,7 @@ class FloatingButtonView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     interface InteractionListener {
+        fun onSingleTap()
         fun onDoubleTap()
         fun onLongPress()
         fun onDragMoved(deltaX: Float, deltaY: Float)
@@ -61,13 +62,26 @@ class FloatingButtonView @JvmOverloads constructor(
     }
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onDown(e: MotionEvent): Boolean = true
+
+        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            if (!isDragging) {
+                android.util.Log.i("AssistX", "FloatingButtonView: onSingleTapConfirmed")
+                listener?.onSingleTap()
+                return true
+            }
+            return false
+        }
+
         override fun onDoubleTap(e: MotionEvent): Boolean {
+            android.util.Log.i("AssistX", "FloatingButtonView: onDoubleTap")
             listener?.onDoubleTap()
             return true
         }
 
         override fun onLongPress(e: MotionEvent) {
             if (!isDragging) {
+                android.util.Log.i("AssistX", "FloatingButtonView: onLongPress")
                 listener?.onLongPress()
             }
         }

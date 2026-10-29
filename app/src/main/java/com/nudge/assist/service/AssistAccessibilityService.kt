@@ -27,6 +27,16 @@ class AssistAccessibilityService : AccessibilityService() {
             }
         }
 
+        fun takeScreenshot(): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val res = instance?.performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) ?: false
+                android.util.Log.i("AssistX", "takeScreenshot performed, result: $res")
+                res
+            } else {
+                false
+            }
+        }
+
         fun performHome(): Boolean {
             return instance?.performGlobalAction(GLOBAL_ACTION_HOME) ?: false
         }

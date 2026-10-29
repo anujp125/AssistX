@@ -66,7 +66,7 @@ class AssistApplication : Application() {
             stateCoordinator = stateCoordinator,
             permissionAdapter = overlayPermissionAdapter,
             preferences = overlayPreferences,
-            actionExecutor = AndroidActionExecutor()
+            actionExecutor = AndroidActionExecutor(this)
         )
 
         // 4. Runtime Controller
