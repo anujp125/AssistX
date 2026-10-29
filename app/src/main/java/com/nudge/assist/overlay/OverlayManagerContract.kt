@@ -8,3 +8,4 @@ interface OverlayManagerContract {
     fun attachOverlay(): Boolean
     fun detachOverlay(): Boolean
 }
+

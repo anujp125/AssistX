@@ -146,3 +146,4 @@ class StudioViewModelTest {
         assertTrue(diagnosticRecorder.recordedEvents.isEmpty())
     }
 }
+

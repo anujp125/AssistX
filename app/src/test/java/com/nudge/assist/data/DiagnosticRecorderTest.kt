@@ -110,3 +110,4 @@ class DiagnosticRecorderTest {
         assertTrue(fakeDao.events.isEmpty())
     }
 }
+

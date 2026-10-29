@@ -13,3 +13,4 @@ interface AccessibilityAdapterContract {
     fun isServiceConnected(): Boolean
     fun createSettingsIntent(context: Context?): Intent
 }
+

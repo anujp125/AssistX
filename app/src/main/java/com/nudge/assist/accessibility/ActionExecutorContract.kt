@@ -16,3 +16,4 @@ class AndroidActionExecutor : ActionExecutorContract {
     override fun performHome(): Boolean = AssistAccessibilityService.performHome()
     override fun performBack(): Boolean = AssistAccessibilityService.performBack()
 }
+

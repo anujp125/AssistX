@@ -18,3 +18,4 @@ data class DiagnosticEventEntity(
     val result: String = "SUCCESS",
     val details: String = ""
 )
+

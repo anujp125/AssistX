@@ -11,3 +11,4 @@ interface UserPreferencesContract {
     suspend fun setDesiredEnabled(enabled: Boolean)
     suspend fun savePosition(x: Int, y: Int)
 }
+

@@ -30,3 +30,4 @@ interface DiagnosticDao {
     @Query("DELETE FROM diagnostic_events")
     suspend fun clearAllEvents(): Int
 }
+
