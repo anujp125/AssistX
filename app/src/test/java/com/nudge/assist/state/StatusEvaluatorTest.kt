@@ -142,6 +142,22 @@ class StatusEvaluatorTest {
     }
 
     @Test
+    fun testPausedForPaymentsDesiredStateYieldsPausedForPayments() {
+        val snapshot = AppStateSnapshot(
+            desiredState = DesiredState.PAUSED_FOR_PAYMENTS,
+            overlayPermissionState = OverlayPermissionState.GRANTED,
+            overlayState = OverlayState.DETACHED,
+            runtimeState = RuntimeState.STOPPED,
+            accessibilityState = AccessibilityState.DISABLED
+        )
+        val status = StatusEvaluator.deriveUserFacingStatus(snapshot)
+        assertEquals(UserFacingStatus.PAUSED_FOR_PAYMENTS, status)
+
+        val readiness = StatusEvaluator.deriveActionReadiness(snapshot)
+        assertEquals(ActionReadiness.BLOCKED, readiness)
+    }
+
+    @Test
     fun testUnknownSubsystemYieldsCheckingStatus() {
         val snapshot = AppStateSnapshot(
             desiredState = DesiredState.ENABLED,

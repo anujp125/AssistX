@@ -11,7 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.nudge.assist.AssistApplication
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.nudge.assist.ui.theme.AssistXTheme
+import com.nudge.assist.ui.theme.MetroAccent
+import com.nudge.assist.ui.theme.ThemeMode
 
 class MainActivity : ComponentActivity() {
 
@@ -36,7 +40,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AssistXTheme {
+            val settings by viewModel.settings.collectAsState()
+            val accent = MetroAccent.fromHex(settings.accentHex)
+            val themeMode = when (settings.themeMode.lowercase()) {
+                "light" -> ThemeMode.LIGHT
+                "system" -> ThemeMode.SYSTEM
+                else -> ThemeMode.DARK
+            }
+
+            AssistXTheme(accent = accent, themeMode = themeMode) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     StudioScreen(viewModel = viewModel)
                 }

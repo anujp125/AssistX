@@ -11,7 +11,8 @@ class FakeActionExecutor(
     var shouldHomeSucceed: Boolean = true,
     var shouldBackSucceed: Boolean = true,
     var shouldVolumeSucceed: Boolean = true,
-    var shouldPowerSucceed: Boolean = true
+    var shouldPowerSucceed: Boolean = true,
+    var shouldDisableA11ySucceed: Boolean = true
 ) : ActionExecutorContract {
 
     var lockScreenCallCount = 0
@@ -20,6 +21,7 @@ class FakeActionExecutor(
     var performBackCallCount = 0
     var openVolumePanelCallCount = 0
     var openPowerDialogCallCount = 0
+    var disableA11yCallCount = 0
 
     override fun lockScreen(): Boolean {
         lockScreenCallCount++
@@ -49,6 +51,11 @@ class FakeActionExecutor(
     override fun openPowerDialog(): Boolean {
         openPowerDialogCallCount++
         return shouldPowerSucceed
+    }
+
+    override fun disableAccessibilityService(): Boolean {
+        disableA11yCallCount++
+        return shouldDisableA11ySucceed
     }
 }
 
@@ -118,5 +125,16 @@ class ActionExecutorTest {
         executor.shouldPowerSucceed = false
         assertFalse(executor.openPowerDialog())
         assertEquals(2, executor.openPowerDialogCallCount)
+    }
+
+    @Test
+    fun testDisableAccessibilityServiceExecution() {
+        val executor = FakeActionExecutor(shouldDisableA11ySucceed = true)
+        assertTrue(executor.disableAccessibilityService())
+        assertEquals(1, executor.disableA11yCallCount)
+
+        executor.shouldDisableA11ySucceed = false
+        assertFalse(executor.disableAccessibilityService())
+        assertEquals(2, executor.disableA11yCallCount)
     }
 }

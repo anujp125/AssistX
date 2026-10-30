@@ -59,15 +59,27 @@ class FakeServiceLauncher : ServiceLauncher {
 
 class FakeUserPreferences : UserPreferencesContract {
     val enabledFlow = MutableStateFlow(false)
+    val isPausedFlow = MutableStateFlow(false)
     val posFlow = MutableStateFlow(OverlayPosition(-1, -1))
     val internalSettingsFlow = MutableStateFlow(com.nudge.assist.data.OverlaySettings())
 
     override val desiredEnabledFlow: Flow<Boolean> = enabledFlow
+    override val isPausedForPaymentsFlow: Flow<Boolean> = isPausedFlow
     override val positionFlow: Flow<OverlayPosition> = posFlow
     override val settingsFlow: Flow<com.nudge.assist.data.OverlaySettings> = internalSettingsFlow
 
     override suspend fun setDesiredEnabled(enabled: Boolean) {
         enabledFlow.value = enabled
+        if (enabled) {
+            isPausedFlow.value = false
+        }
+    }
+
+    override suspend fun setPausedForPayments(paused: Boolean) {
+        isPausedFlow.value = paused
+        if (paused) {
+            enabledFlow.value = false
+        }
     }
 
     override suspend fun savePosition(x: Int, y: Int) {
@@ -100,6 +112,58 @@ class FakeUserPreferences : UserPreferencesContract {
 
     override suspend fun setSnapToEdgeEnabled(enabled: Boolean) {
         internalSettingsFlow.value = internalSettingsFlow.value.copy(snapToEdgeEnabled = enabled)
+    }
+
+    override suspend fun setAccentHex(hex: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(accentHex = hex)
+    }
+
+    override suspend fun setThemeMode(mode: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(themeMode = mode)
+    }
+
+    override suspend fun setButtonShape(shape: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(buttonShape = shape)
+    }
+
+    override suspend fun setButtonStyle(style: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(buttonStyle = style)
+    }
+
+    override suspend fun setButtonColorMode(colorMode: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(buttonColorMode = colorMode)
+    }
+
+    override suspend fun setPopoutButtonSizeDp(sizeDp: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutButtonSizeDp = sizeDp)
+    }
+
+    override suspend fun setPopoutOrientation(orientation: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutOrientation = orientation)
+    }
+
+    override suspend fun setPopoutItemSpacingDp(spacingDp: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutItemSpacingDp = spacingDp)
+    }
+
+    override suspend fun setPopoutMarginDp(marginDp: Int) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutMarginDp = marginDp)
+    }
+
+    override suspend fun setPopoutOrder(order: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(popoutOrder = order)
+    }
+
+    override suspend fun setCapsuleEnabled(enabled: Boolean) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(capsuleEnabled = enabled)
+    }
+
+    override suspend fun setCapsuleStyle(style: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(capsuleStyle = style)
+    }
+
+    override suspend fun setCapsuleCornerRadius(radius: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(capsuleCornerRadius = radius)
     }
 }
 
@@ -225,5 +289,26 @@ class RuntimeControllerTest {
         runtimeController.handleUnexpectedInterruption("Repeated crash")
 
         assertEquals(RuntimeState.FAILED, stateCoordinator.currentSnapshot.runtimeState)
+    }
+
+    @Test
+    fun testPauseForPayments() = testScope.runTest {
+        permissionAdapter.state = OverlayPermissionState.GRANTED
+        overlayManager.shouldSucceed = true
+
+        runtimeController.startAssistant()
+        advanceUntilIdle()
+        assertTrue(overlayManager.isAttached)
+        assertTrue(serviceLauncher.isStarted)
+        assertEquals(DesiredState.ENABLED, stateCoordinator.currentSnapshot.desiredState)
+
+        runtimeController.pauseForPayments()
+        advanceUntilIdle()
+
+        assertEquals(DesiredState.PAUSED_FOR_PAYMENTS, stateCoordinator.currentSnapshot.desiredState)
+        assertEquals(RuntimeState.STOPPED, stateCoordinator.currentSnapshot.runtimeState)
+        assertFalse(overlayManager.isAttached)
+        assertFalse(serviceLauncher.isStarted)
+        assertTrue(preferences.isPausedFlow.value)
     }
 }

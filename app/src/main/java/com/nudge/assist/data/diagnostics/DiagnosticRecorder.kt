@@ -46,7 +46,7 @@ class DiagnosticRecorder(
                         component = component,
                         result = result,
                         severity = severity,
-                        details = details
+                        details = sanitizeDetails(details)
                     )
                 )
                 dao.pruneOldEvents(500)
@@ -54,6 +54,14 @@ class DiagnosticRecorder(
                 // Best effort logging: never crash caller
             }
         }
+    }
+
+    private fun sanitizeDetails(rawDetails: String): String {
+        if (rawDetails.isEmpty()) return ""
+        val trimmed = if (rawDetails.length > 256) rawDetails.substring(0, 256) else rawDetails
+        return trimmed
+            .replace(Regex("""/data/user/\d+/[^/\s]+"""), "/data/user/[REDACTED]")
+            .replace(Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}"""), "[EMAIL_REDACTED]")
     }
 
     override fun getRecentEvents(limit: Int): Flow<List<DiagnosticEventEntity>> {

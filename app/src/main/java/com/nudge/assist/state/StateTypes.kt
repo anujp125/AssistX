@@ -9,7 +9,10 @@ enum class DesiredState {
     ENABLED,
 
     /** The user has explicitly turned AssistX off. Automatic recovery must be suppressed. */
-    DISABLED
+    DISABLED,
+
+    /** The user has explicitly paused AssistX for payment apps. Overlay is detached, Accessibility disabled. */
+    PAUSED_FOR_PAYMENTS
 }
 
 /**
@@ -94,8 +97,14 @@ enum class AccessibilityState {
     /** Setting is enabled in Android Settings, but the service is currently unbound/disconnected. */
     ENABLED_DISCONNECTED,
 
+    /** Accessibility state is actively being verified. */
+    CHECKING,
+
     /** Accessibility state is unverified. */
-    UNKNOWN
+    UNKNOWN;
+
+    val isConnected: Boolean get() = this == ENABLED_CONNECTED
+    val isEnabledInSettings: Boolean get() = this == ENABLED_CONNECTED || this == ENABLED_DISCONNECTED
 }
 
 /**

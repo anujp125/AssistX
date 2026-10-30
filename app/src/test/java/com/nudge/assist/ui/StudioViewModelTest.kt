@@ -185,5 +185,23 @@ class StudioViewModelTest {
         assertEquals(true, settings.hapticFeedbackEnabled)
         assertEquals(true, settings.snapToEdgeEnabled)
     }
+
+    @Test
+    fun testPauseForPaymentsAndResume() = testScope.runTest {
+        viewModel.onToggleMaster(true)
+        advanceUntilIdle()
+        assertEquals(DesiredState.ENABLED, stateCoordinator.currentSnapshot.desiredState)
+
+        viewModel.onPauseForPayments()
+        advanceUntilIdle()
+        assertEquals(DesiredState.PAUSED_FOR_PAYMENTS, stateCoordinator.currentSnapshot.desiredState)
+        assertEquals(UserFacingStatus.PAUSED_FOR_PAYMENTS, stateCoordinator.currentStatus)
+        assertTrue(diagnosticRecorder.recordedEvents.any { it.eventType == "PAUSE_FOR_PAYMENTS_TRIGGERED" })
+
+        viewModel.onResumeFromPayments()
+        advanceUntilIdle()
+        assertEquals(DesiredState.ENABLED, stateCoordinator.currentSnapshot.desiredState)
+        assertTrue(diagnosticRecorder.recordedEvents.any { it.eventType == "RESUME_FROM_PAYMENTS_TRIGGERED" })
+    }
 }
 

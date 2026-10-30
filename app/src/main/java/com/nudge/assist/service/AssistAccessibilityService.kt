@@ -1,8 +1,10 @@
 package com.nudge.assist.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.res.Configuration
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
+import com.nudge.assist.AssistApplication
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +52,20 @@ class AssistAccessibilityService : AccessibilityService() {
         fun performBack(): Boolean {
             return instance?.performGlobalAction(GLOBAL_ACTION_BACK) ?: false
         }
+
+        fun disableSelfSafely(): Boolean {
+            val active = instance ?: return false
+            return try {
+                active.disableSelf()
+                instance = null
+                _isConnected.value = false
+                android.util.Log.i("AssistX", "AssistAccessibilityService: disableSelf executed successfully")
+                true
+            } catch (e: Exception) {
+                android.util.Log.e("AssistX", "AssistAccessibilityService: disableSelf failed", e)
+                false
+            }
+        }
     }
 
     override fun onServiceConnected() {
@@ -63,7 +79,17 @@ class AssistAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        // Called when system interrupts the service
+        android.util.Log.w("AssistX", "AssistAccessibilityService: System interrupted accessibility service")
+        _isConnected.value = false
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        try {
+            AssistApplication.instance.overlayManager.onConfigurationChanged()
+        } catch (e: Exception) {
+            // Ignored during rotation
+        }
     }
 
     override fun onDestroy() {

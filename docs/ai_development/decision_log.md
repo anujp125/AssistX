@@ -45,6 +45,12 @@ Rules for agents
 | **D-022** | Hardware validation scope | Approved | **Single-device baseline**: Realme Narzo 30 4G (RMX2156, realme UI 3.0, Android 12). Broader matrix in v1.0. | REAL_DEVICE_TEST.md |
 | **D-023** | Open Source License | Approved | **GNU General Public License v3.0 (GPLv3)**. Full license text in `license.md`. | license.md, README.md |
 | **D-024** | Git workflow and branching | Approved | Primary branch `main`. Development via atomic task branches with review before merge. | setup.md, AI_AGENT_WORKFLOW.md |
+| **D-025** | Payment Safety Mode | Approved | **One-tap pause invoking `disableSelf()` and detaching overlay** with double-approval modal to protect UPI apps (BHIM, Google Pay, PhonePe). | docs/upi-security-and-accessibility-design.md, StudioScreen.kt |
+| **D-026** | Action-Specific Gating | Approved | Centralized `AssistAction` capability mapping & `ActionDispatcher` with **zero-replay guarantee**. | AssistAction.kt, ActionDispatcher.kt, OverlayManager.kt |
+| **D-027** | Metro UI Language | Approved | **0dp sharp geometry, 2dp borders, Selawik typography, WCAG AA compliance**, eliminated decorative AI dots/badges. | ui-style-guide.md, MetroTile.kt, Color.kt, Type.kt |
+| **D-028** | Action Popout Array | Approved | Configurable orientation (H/V), adaptive expansion, 46/54/62dp sizes, optional capsule. | ActionPopoutView.kt, OverlayPreferences.kt |
+| **D-029** | Screen-Off Lifecycle | Approved | **Detach overlay on screen-off, reattach on screen-wake** to conserve battery and avoid stale window rendering. | OverlayManager.kt, AssistForegroundService.kt |
+| **D-030** | Display Rotation | Approved | Coordinate clamping and mirror-to-nearest-edge on rotation. | OverlayManager.kt |
 
 3. Technical Verification Records
 

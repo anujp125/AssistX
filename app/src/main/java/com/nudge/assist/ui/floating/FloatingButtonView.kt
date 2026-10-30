@@ -2,9 +2,14 @@ package com.nudge.assist.ui.floating
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -12,11 +17,19 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import com.nudge.assist.R
+import com.nudge.assist.ui.haptics.MetroHaptics
 import kotlin.math.hypot
 
 /**
- * Custom View rendering the 56dp assistive touch button with snap-to-edge dragging,
- * idle opacity fading, double-tap, and long-press gesture detection.
+ * Windows Phone "Metro" Restyled Floating Assistant View.
+ *
+ * Characteristics:
+ * - Flat solid aesthetic with 2dp solid outline.
+ * - Customizable Shape: CIRCLE, SQUARE (0dp Metro), ROUNDED (12dp squircle).
+ * - Customizable Style: METRO_OUTLINE, SOLID_ACCENT, MONOLINE_RING.
+ * - Customizable Color: ACCENT (follows theme) or custom color override.
+ * - Integrated MetroHaptics feedback.
  */
 class FloatingButtonView @JvmOverloads constructor(
     context: Context,
@@ -37,10 +50,12 @@ class FloatingButtonView @JvmOverloads constructor(
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val handler = Handler(Looper.getMainLooper())
     private val idleFadeRunnable = Runnable { fadeToIdleAlpha() }
+    private val haptics = MetroHaptics(context)
 
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isDragging = false
+    private var totalDragDistance = 0f
 
     private var idleAlpha = 0.75f
     private val activeAlpha = 1.0f
@@ -50,37 +65,69 @@ class FloatingButtonView @JvmOverloads constructor(
     var snapToEdgeEnabled = true
         private set
 
-    private val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Customization Properties
+    var buttonShape: String = "CIRCLE"
+        private set
+    var buttonStyle: String = "METRO_OUTLINE"
+        private set
+    var buttonColorMode: String = "ACCENT"
+        private set
+
+    // Metro Accent Color (Defaults to Cobalt #0050EF)
+    private var accentColorInt = Color.parseColor("#0050EF")
+
+    // Flat Base Paint
+    private val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
+        color = Color.BLACK
     }
 
-    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // 2dp Metro Outline
+    private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 4f
-        color = Color.argb(220, 240, 240, 240)
+        strokeWidth = 2.5f * context.resources.displayMetrics.density
+        color = accentColorInt
     }
 
-    private val innerDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // Inner Accent Ring (Status Indicator)
+    private val innerRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.5f * context.resources.displayMetrics.density
+        color = accentColorInt
+    }
+
+    // Center Core Dot Paint (Clean Assistive Dot replacing confusing power glyph)
+    private val centerCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = Color.WHITE
-    }
-
-    private fun triggerHaptic() {
-        if (hapticFeedbackEnabled) {
-            performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-        }
     }
 
     fun updateSettings(
         idleOpacityPercent: Int,
         idleFadeSeconds: Int,
         hapticFeedback: Boolean,
-        snapToEdge: Boolean
+        snapToEdge: Boolean,
+        accentHex: String = "#0050EF",
+        buttonShape: String = "CIRCLE",
+        buttonStyle: String = "METRO_OUTLINE",
+        buttonColorMode: String = "ACCENT"
     ) {
         this.idleAlpha = (idleOpacityPercent / 100f).coerceIn(0.2f, 1.0f)
         this.idleFadeDelayMs = (idleFadeSeconds * 1000L).coerceIn(1000L, 10000L)
         this.hapticFeedbackEnabled = hapticFeedback
+        this.haptics.isEnabled = hapticFeedback
         this.snapToEdgeEnabled = snapToEdge
+        this.buttonShape = buttonShape.uppercase()
+        this.buttonStyle = buttonStyle.uppercase()
+        this.buttonColorMode = buttonColorMode
+
+        val effectiveHex = if (buttonColorMode.startsWith("#")) buttonColorMode else accentHex
+        try {
+            this.accentColorInt = Color.parseColor(effectiveHex)
+        } catch (e: Exception) {
+            this.accentColorInt = Color.parseColor("#0050EF")
+        }
+
         updatePaintAlpha(this.idleAlpha)
     }
 
@@ -90,7 +137,7 @@ class FloatingButtonView @JvmOverloads constructor(
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             if (!isDragging) {
                 android.util.Log.i("AssistX", "FloatingButtonView: onSingleTapConfirmed")
-                triggerHaptic()
+                haptics.tap(this@FloatingButtonView)
                 listener?.onSingleTap()
                 return true
             }
@@ -99,7 +146,7 @@ class FloatingButtonView @JvmOverloads constructor(
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
             android.util.Log.i("AssistX", "FloatingButtonView: onDoubleTap")
-            triggerHaptic()
+            haptics.select(this@FloatingButtonView)
             listener?.onDoubleTap()
             return true
         }
@@ -107,22 +154,61 @@ class FloatingButtonView @JvmOverloads constructor(
         override fun onLongPress(e: MotionEvent) {
             if (!isDragging) {
                 android.util.Log.i("AssistX", "FloatingButtonView: onLongPress")
-                triggerHaptic()
+                haptics.select(this@FloatingButtonView)
                 listener?.onLongPress()
             }
         }
     })
 
+    private var activeAlphaAnimator: ValueAnimator? = null
+
+    // Reusable geometry cache for zero allocations in onDraw
+    private val outerRect = RectF()
+    private val innerRect = RectF()
+    private val glyphRect = RectF()
+
     init {
+        filterTouchesWhenObscured = true
         updatePaintAlpha(idleAlpha)
     }
 
     private fun updatePaintAlpha(alpha: Float) {
         currentAlpha = alpha
         val alphaInt = (alpha * 255).toInt().coerceIn(0, 255)
-        outerPaint.color = Color.argb(alphaInt, 33, 33, 33)
-        ringPaint.alpha = (alpha * 220).toInt().coerceIn(0, 255)
-        innerDotPaint.alpha = (alpha * 255).toInt().coerceIn(0, 255)
+        val isLightColor = (accentColorInt == Color.WHITE || (Color.red(accentColorInt) > 215 && Color.green(accentColorInt) > 215 && Color.blue(accentColorInt) > 215))
+
+        when (buttonStyle) {
+            "SOLID_ACCENT" -> {
+                basePaint.color = accentColorInt
+                basePaint.alpha = alphaInt
+                borderPaint.color = if (isLightColor) Color.BLACK else Color.WHITE
+                borderPaint.alpha = (alpha * 200).toInt().coerceIn(0, 255)
+                innerRingPaint.color = if (isLightColor) Color.argb(96, 0, 0, 0) else Color.WHITE
+                innerRingPaint.alpha = (alpha * 120).toInt().coerceIn(0, 255)
+                centerCorePaint.color = if (isLightColor) Color.BLACK else Color.WHITE
+                centerCorePaint.alpha = (alpha * 240).toInt().coerceIn(0, 255)
+            }
+            "MONOLINE_RING" -> {
+                basePaint.color = Color.BLACK
+                basePaint.alpha = (alpha * 160).toInt().coerceIn(0, 255)
+                borderPaint.color = accentColorInt
+                borderPaint.alpha = alphaInt
+                innerRingPaint.color = accentColorInt
+                innerRingPaint.alpha = alphaInt
+                centerCorePaint.color = accentColorInt
+                centerCorePaint.alpha = (alpha * 220).toInt().coerceIn(0, 255)
+            }
+            else -> { // "METRO_OUTLINE" default
+                basePaint.color = Color.BLACK
+                basePaint.alpha = alphaInt
+                borderPaint.color = accentColorInt
+                borderPaint.alpha = alphaInt
+                innerRingPaint.color = accentColorInt
+                innerRingPaint.alpha = (alpha * 180).toInt().coerceIn(0, 255)
+                centerCorePaint.color = if (isLightColor) accentColorInt else Color.WHITE
+                centerCorePaint.alpha = (alpha * 220).toInt().coerceIn(0, 255)
+            }
+        }
         invalidate()
     }
 
@@ -143,8 +229,9 @@ class FloatingButtonView @JvmOverloads constructor(
     }
 
     private fun animateAlpha(from: Float, to: Float) {
-        ValueAnimator.ofFloat(from, to).apply {
-            duration = 300
+        activeAlphaAnimator?.cancel()
+        activeAlphaAnimator = ValueAnimator.ofFloat(from, to).apply {
+            duration = 200
             addUpdateListener { animator ->
                 updatePaintAlpha(animator.animatedValue as Float)
             }
@@ -152,8 +239,14 @@ class FloatingButtonView @JvmOverloads constructor(
         }
     }
 
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        handler.removeCallbacksAndMessages(null)
+        activeAlphaAnimator?.cancel()
+        activeAlphaAnimator = null
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Feed into gesture detector for double-tap and long-press
         val gestureHandled = gestureDetector.onTouchEvent(event)
 
         when (event.actionMasked) {
@@ -161,6 +254,7 @@ class FloatingButtonView @JvmOverloads constructor(
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isDragging = false
+                totalDragDistance = 0f
                 fadeToActiveAlpha()
                 return true
             }
@@ -168,15 +262,18 @@ class FloatingButtonView @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.rawX - initialTouchX
                 val dy = event.rawY - initialTouchY
+                val dist = hypot(dx.toDouble(), dy.toDouble()).toFloat()
 
-                if (!isDragging && hypot(dx.toDouble(), dy.toDouble()) > touchSlop) {
+                if (!isDragging && dist > touchSlop) {
                     isDragging = true
+                    haptics.light(this)
                 }
 
                 if (isDragging) {
                     listener?.onDragMoved(dx, dy)
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
+                    totalDragDistance += dist
                     return true
                 }
             }
@@ -184,7 +281,7 @@ class FloatingButtonView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
-                    triggerHaptic()
+                    haptics.light(this)
                     listener?.onDragReleased()
                 }
                 scheduleIdleFade()
@@ -199,18 +296,41 @@ class FloatingButtonView @JvmOverloads constructor(
         super.onDraw(canvas)
         val cx = width / 2f
         val cy = height / 2f
-        val radius = width.coerceAtMost(height) / 2f - 4f
+        val density = context.resources.displayMetrics.density
+        val strokeHalf = borderPaint.strokeWidth / 2f
+        val outerRadius = (width.coerceAtMost(height) / 2f) - strokeHalf - (1f * density)
 
-        if (radius <= 0) return
+        if (outerRadius <= 0) return
 
-        // 1. Draw dark outer circle
-        canvas.drawCircle(cx, cy, radius, outerPaint)
+        val innerRadius = outerRadius * 0.60f
+        val coreRadius = outerRadius * 0.22f
+        outerRect.set(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius)
+        innerRect.set(cx - innerRadius, cy - innerRadius, cx + innerRadius, cy + innerRadius)
+        glyphRect.set(cx - coreRadius, cy - coreRadius, cx + coreRadius, cy + coreRadius)
 
-        // 2. Draw subtle inner ring
-        canvas.drawCircle(cx, cy, radius * 0.70f, ringPaint)
-
-        // 3. Draw center core dot
-        canvas.drawCircle(cx, cy, radius * 0.35f, innerDotPaint)
+        when (buttonShape) {
+            "SQUARE" -> {
+                // Flat Metro Square (0dp radius)
+                canvas.drawRect(outerRect, basePaint)
+                canvas.drawRect(outerRect, borderPaint)
+                canvas.drawRect(innerRect, innerRingPaint)
+                canvas.drawRect(glyphRect, centerCorePaint)
+            }
+            "ROUNDED" -> {
+                // Metro Rounded Squircle (12dp corner radius)
+                val cr = 12f * density
+                canvas.drawRoundRect(outerRect, cr, cr, basePaint)
+                canvas.drawRoundRect(outerRect, cr, cr, borderPaint)
+                canvas.drawRoundRect(innerRect, cr * 0.60f, cr * 0.60f, innerRingPaint)
+                canvas.drawRoundRect(glyphRect, cr * 0.22f, cr * 0.22f, centerCorePaint)
+            }
+            else -> {
+                // Metro Circle
+                canvas.drawCircle(cx, cy, outerRadius, basePaint)
+                canvas.drawCircle(cx, cy, outerRadius, borderPaint)
+                canvas.drawCircle(cx, cy, innerRadius, innerRingPaint)
+                canvas.drawCircle(cx, cy, coreRadius, centerCorePaint)
+            }
+        }
     }
 }
-

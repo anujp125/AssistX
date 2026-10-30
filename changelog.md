@@ -5,6 +5,27 @@ All notable changes to the AssistX project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-rc2] - 2026-10-30
+
+### Added
+- **Action-Specific Accessibility Permission Handling**: Centralized `AssistAction` capability mapping and `ActionDispatcher` gating. Dispatches independent actions (`Volume Control`, `Drag & Drop`, `Popout Toggle`, `Edge Snapping`, `Studio Navigation`, `Payment Safety Mode`) immediately without prompts, while gating system-level actions (`Screen Lock`, `Home`, `Screenshot`, `Power Dialog`).
+- **Metro Accessibility Required Dialog**: WindowManager `TYPE_APPLICATION_OVERLAY` modal with pure black `#121214` surface, 2dp amber outline, 0dp sharp geometry, and zero-replay invariant (does not auto-replay blocked actions after settings change).
+- **Payment Safety Mode**: One-tap payment protection that invokes `disableSelf()` and detaches floating overlay, preventing accessibility blocking in financial applications (BHIM, Google Pay, PhonePe). Includes a double-approval confirmation modal to prevent accidental triggers.
+- **Action Popout Menu**: Fully configurable floating action array supporting horizontal and vertical orientations, adaptive or directional expansion, customizable spacing, sizes (46dp/54dp/62dp), and optional background capsule styling.
+- **Metro / Modern UI Design Language**: Comprehensive interface overhaul using Selawik typography, 0dp rectangular tiles, strict semantic coloring, and verified WCAG AA contrast (pure white text on accent, > 4.5:1 ratio).
+- **Expanded Unit Test Suite**: Increased automated test coverage from 49 to 63 unit tests across 13 test suites covering state, recovery, action gating, and no-replay guarantees.
+
+### Changed
+- **Overview & Diagnostics Alignment**: Replaced decorative AI-style status dots with clean monoline icons and stacked vertical text hierarchy, completely eliminating awkward word wraps (e.g. `accessibilit\ny disabled`).
+- **Settings Default Expansion**: Enforced fresh collapse on every navigation to the Settings tab across all accordion groups.
+- **Display Lifecycle Invariants**: Floating overlay detaches on screen-off and reattaches on screen-wake; button coordinates clamp and mirror to nearest edge upon display rotation.
+- **Floating Button Visual Glyph**: Replaced confusing power-style icon with a clean, unobtrusive concentric locator glyph.
+
+### Fixed
+- Fixed text wrapping and clipping in status tiles on varying display densities.
+- Fixed overlay touch target conflicts between dragging, tapping, double-tapping, and popout expansion.
+- Corrected release build signing template to prevent hardcoded credentials.
+
 ## [0.1.0-rc1] - 2026-10-29
 
 ### Added

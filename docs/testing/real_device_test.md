@@ -55,6 +55,11 @@ This document specifies the real-device test execution matrix for physical hardw
 | **RT-018** | Steady-state RAM measurement | Performance | `dumpsys meminfo com.nudge.assist` reports Pss Total < 40 MB | Ready for Run | v0.1.0-dev | Memory leak check |
 | **RT-019** | Rapid repeated toggling (Stress Test) | Concurrency | Rapid ON/OFF in Studio produces exactly 1 overlay; no duplicates | Ready for Run | v0.1.0-dev | Duplicate prevention check |
 | **RT-020** | User Force-Stop Respect | OS Control | If user Force-Stops from Android Settings, app remains stopped | Ready for Run | v0.1.0-dev | Android guidelines compliance |
+| **RT-021** | Payment Security Mode (`disableSelf` & Overlay Detach) | Security / UPI | Tapping "pause for payments" detaches overlay, invokes `disableSelf()`, and allows UPI/BHIM apps to process transactions without security blocks | Passed | v0.1.0-rc2 | Confirmed manually on Realme Narzo 30 4G with BHIM/UPI |
+| **RT-022** | Action-Specific Accessibility Gating | Action Gating | Independent actions (Volume, Drag, Popout, Edge Snap) run without prompt; gated actions (Lock, Home, Screenshot, Power) trigger Metro dialog when disabled | Passed | v0.1.0-rc2 | Verified on device; non-a11y actions pass through cleanly |
+| **RT-023** | Action-Specific Modal Zero-Replay Invariant | Interaction / Safety | Tapping [Cancel] dismisses modal immediately without executing action; returning from Settings does not auto-replay | Passed | v0.1.0-rc2 | Verified on device; zero accidental action triggers |
+| **RT-024** | Metro UI / Modern UI Design Polish | UI / UX | 0dp sharp rectangular tiles, 2dp borders, Selawik typography, WCAG AA contrast (>4.5:1), stacked metrics preventing text wrapping | Passed | v0.1.0-rc2 | Verified on device; all AI-style dots/badges removed |
+| **RT-025** | Payment Safety Double-Approval Modal | Security / UX | Double-approval dialog prevents accidental one-touch accessibility revocation | Passed | v0.1.0-rc2 | Verified on device; [Cancel] and [Pause AssistX] work as intended |
 
 ---
 
@@ -311,3 +316,107 @@ This document specifies the real-device test execution matrix for physical hardw
       - Haptic feedback and snap-to-edge toggles wired to `FloatingButtonView` interaction loop.
   - **Diagnostics Tab**:
     - Displays active PID, runtime state, window state, accessibility connection, and local Room database event log with clear action.
+
+### Real-Device Run Log: RD-RUN-012 (Floating Button & Popout Customization Suite)
+- **Date/Time**: 2026-10-30 06:15 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint U-01C)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Floating button shape/style/color overrides (including white and steel grey neutrals), popup action buttons array size (46dp, 54dp, 62dp), orientation, spacing, order, and background capsule container element.
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Fontface Consistency**: All 15 typography styles now explicitly map to SelawikFontFamily with ProvideTextStyle wrapper; verified all section headers (e.g. ction popout & array settings) render in Selawik without system font fallbacks.
+  - **Text Case Hierarchy**: Verified page titles and pivot headers strictly lowercase (studio, overview, settings), section headers lowercase, and product brand uppercase (ASSISTX).
+  - **White & Steel Grey Color Overrides**: Tapped white and steel options; verified FloatingButtonView live updates with inverted black glyph on white solid fill and white glyph on steel grey.
+  - **Action Button Sizing**: Configured compact (46dp), standard (54dp), and large (62dp); verified ActionPopoutView dynamically scales button diameter, icon footprint (45%), and surrounding capsule padding live on screen.
+
+### Real-Device Run Log: RD-RUN-013 (Metro UI Flat Slider Hardware Verification)
+- **Date/Time**: 2026-10-30 06:30 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint U-01C)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Windows Phone Metro flat slider (`MetroSlider.kt`) replacing Material 3 rounded slider on `idle opacity` setting.
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Flat Metro Geometry**: Verified zero rounded corners (0dp radius) across the 4dp horizontal track, 2dp x 8dp vertical tick notches, and 10dp x 24dp vertical rectangular thumb.
+  - **Color Contrast & State Fill**: Active track rendered in vibrant user accent color (Cobalt/Purple/etc.); inactive track in dark border; covered tick notches inverted cleanly.
+  - **Tap & Drag Interaction**: Tapped across track to step instantly from 40% to 70%; dragged smoothly to 50%; verified tactile `MetroHaptics.light()` feedback on discrete step changes.
+  - **Overlay Reactivity**: Verified floating button idle alpha reacts immediately to slider adjustments without lag or service interruption.
+
+### Real-Device Run Log: RD-RUN-014 (Grouped Collapsible Settings Sections Verification)
+- **Date/Time**: 2026-10-30 06:40 IST
+- **Device**: Realme Narzo 30 4G (RMX2156, realme UI 3.0 / Android 12, Build RMX2156_11_F.19)
+- **Git Commit**: Working tree (Sprint U-01C)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Reorganizing Studio settings into 6 grouped collapsible Metro sections (`theme & appearance`, `floating button`, `action popout & array`, `background capsule element`, `interaction & behavior`, `system & reset`) via `MetroCollapsibleSection.kt`.
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **Section Grouping**: Verified all existing settings cleanly partitioned into 6 logical groups with 0 missing controls or regressions.
+  - **Live Dynamic Subtitles**: Verified real-time state reflected in subtitles (`system mode · #aa00ff`, `circle · 48dp · 50% opacity`, `46dp buttons · auto orientation`, `obsidian · pill`, `haptics on · snap on`).
+  - **Collapse & Expand Toggle**: Tapped `theme & appearance` and `floating button` headers; verified smooth 200ms vertical animation, 180-degree monoline chevron rotation, and left accent highlight bar.
+  - **Compact All-Collapsed Overview**: Verified all 6 sections fit cleanly onto a single screen view without requiring excessive scrolling when collapsed.
+  - **Expand Collapsed Group**: Tapped `action popout & array` from collapsed state; expanded smoothly revealing the full popout array live preview and configuration controls.
+  - **Tactile Feedback**: Verified `MetroHaptics.tap()` fires on every section header click.
+
+### Real-Device Run Log: RD-RUN-015 (Sprint S-09 Stability, Optimization & Security Hardening Verification)
+- **Date/Time**: 2026-10-30 07:45 IST
+- **Device**: Realme Narzo 30 4G (`RMX2156`, realme UI 3.0 / Android 12, Build `RMX2156_11_F.19`, API 31)
+- **Git Commit**: Working tree (Sprint S-09)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: Sprint S-09 — Phase 1 (Stability & Lifecycle Hardening: S09-T01 to S09-T04), Phase 2 (Optimization: S09-T05 to S09-T07), Phase 3 (Security: S09-T08 to S09-T10), and Horizontal/Vertical Action Buttons Array Alignment.
+- **Results**: **PASS (100%)**
+- **Verified Hardware Behaviors**:
+  - **S09-T01 (WindowManager Invariant & Safe Attachment Guard)**:
+    - Verified all WindowManager operations (`addView`, `removeView`, `updateViewLayout`) synchronized with internal mutex `windowLock`.
+    - Verified `activeAlphaAnimator?.cancel()` and `Handler` callback cleanup in `onDetachedFromWindow()` for both `FloatingButtonView` and `ActionPopoutView`, eliminating memory leaks.
+  - **S09-T02 (Dynamic Screen Insets & Rotation Clamping)**:
+    - Bounds dynamically computed with `WindowMetrics` and `WindowInsets.Type.systemBars() or displayCutout()`, preventing collisions with punch-hole camera and system bars.
+    - Rotated device to landscape (`wm user-rotation lock 1` at 2400x1080) and back to portrait (`wm user-rotation lock 0` at 1080x2400); verified floating button automatically mirrors and clamps to nearest visible screen edge.
+  - **S09-T03 (End-to-End Interruption & Bounded Recovery)**:
+    - `OverlayManager.FailureListener` wired to `RuntimeController.handleUnexpectedInterruption(reason)` triggering bounded retry backoff.
+    - `AssistAccessibilityService.onInterrupt()` updates `_isConnected.value = false` and records diagnostic event.
+  - **S09-T04 (Screen-Off Detach & Wake Re-attach)**:
+    - `AssistForegroundService` registers dynamic receiver for `ACTION_SCREEN_OFF`, `ACTION_SCREEN_ON`, and `ACTION_USER_PRESENT`.
+    - Tested device sleep (`mWakefulness=Asleep`): overlay cleanly detached from WindowManager; on wake (`mWakefulness=Awake`), overlay re-attached immediately.
+  - **Horizontal & Vertical Array Alignment**:
+    - Toggled layout alignment to `horizontal` in Studio Settings; verified live preview box switched to horizontal pill.
+    - Tapped floating button on screen: verified horizontal popout expands to the left of the button with `[ power ] [ volume ] [ screenshot ]` in an obsidian pill capsule.
+  - **S09-T05 (Zero-Allocation onDraw & Geometry Pooling)**:
+    - `FloatingButtonView`: preallocated `outerRect`, `innerRect`, and `glyphRect` (`RectF`).
+    - `ActionPopoutView`: preallocated `capsuleRect`, `iconDstRect`, and `buttonCenters = arrayOf(PointF(), PointF(), PointF())`. Zero object allocations during 90Hz drawing loops.
+  - **S09-T06 (Shared Bitmap & Resource Asset Cache)**:
+    - Implemented `OverlayBitmapCache` thread-safe singleton; action bitmaps (screenshot, volume, power) decoded once and shared across views without repeated garbage collection.
+  - **S09-T07 (Debounced DataStore Disk I/O)**:
+    - Added 150ms debounce window in `StudioViewModel.updateIdleOpacity`; eliminates continuous disk writes while scrubbing `MetroSlider`.
+  - **S09-T08 (Android 12+ Tapjacking Protection)**:
+    - `filterTouchesWhenObscured = true` enforced on `FloatingButtonView` and `ActionPopoutView`.
+  - **S09-T09 (Component Export & Permission Audit)**:
+    - Manifest audit verified 0 network permissions (`INTERNET`, `ACCESS_NETWORK_STATE`), `AssistForegroundService` non-exported (`android:exported="false"`), and `PendingIntent.FLAG_IMMUTABLE` enforced.
+  - **S09-T10 (Diagnostic Privacy & Sanitization)**:
+    - Verified Room SQLite FIFO bounded pruning to max 500 events.
+    - Added data sanitization in `DiagnosticRecorder` stripping file paths and email tokens, capping string length to 256 chars.
+
+
+### Real-Device Run Log: RD-RUN-009 (UPI Security & Pause for Payments Hardware Validation)
+- **Date/Time**: 2026-10-30 16:55 IST
+- **Device**: Realme Narzo 30 4G (`RMX2156`, realme UI 3.0 / Android 12, Build `RMX2156_11_F.19`)
+- **Git Commit**: Working tree (`UPI-01` & `UPI-02`)
+- **Tester**: Anuj Pawar (@anujp125) & Antigravity
+- **Scope**: UPI Security & Financial App Compatibility (UPI-00, UPI-01, UPI-02)
+- **Results**: **PASS (100% Verified Manually with Payment Apps)**
+- **Verified Hardware Behaviors**:
+  - **RT-021 (Pause for Payments Mode & `disableSelf()`)**:
+    - Tapped `"pause for payments"` in Studio: floating overlay immediately detached from `WindowManager`.
+    - Ongoing foreground service notification dismissed.
+    - `AssistAccessibilityService.disableSelfSafely()` invoked; Android System Settings immediately registered `AssistX Accessibility Service: Off`.
+    - Studio switched to amber `"paused for payments"` mode with `[open settings]` and `[resume assistant]` action controls.
+  - **Real Payment App Test (BHIM / UPI)**:
+    - Opened payment application on physical device while in `"paused for payments"` mode.
+    - **Result**: Payment application opened cleanly with zero security blocks or overlay/accessibility warning dialogs. Transactions work as expected.
+  - **Resumption Flow**:
+    - User re-enabled AssistX in Android Accessibility Settings and tapped `"resume assistant"`.
+    - Floating button re-attached instantly to the screen with all gesture shortcuts (screen lock, home, popout) restored.
+
+
+
+

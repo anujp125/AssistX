@@ -1,9 +1,12 @@
 package com.nudge.assist.runtime
 
 import android.content.Context
+import com.nudge.assist.accessibility.ActionExecutorContract
+import com.nudge.assist.accessibility.AndroidActionExecutor
 import com.nudge.assist.data.OverlayPreferences
 import com.nudge.assist.data.UserPreferencesContract
 import com.nudge.assist.overlay.AndroidOverlayPermissionAdapter
+import com.nudge.assist.overlay.OverlayManager
 import com.nudge.assist.overlay.OverlayManagerContract
 import com.nudge.assist.overlay.OverlayPermissionAdapter
 import com.nudge.assist.service.AndroidServiceLauncher
@@ -19,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Coordinates application lifecycle, service start/stop, overlay attachment,
@@ -32,11 +36,22 @@ class RuntimeController(
     private val permissionAdapter: OverlayPermissionAdapter = AndroidOverlayPermissionAdapter(),
     private val preferences: UserPreferencesContract? = context?.let { OverlayPreferences(it) },
     private val serviceLauncher: ServiceLauncher = AndroidServiceLauncher(context),
+    private val actionExecutor: ActionExecutorContract = AndroidActionExecutor(context),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
-) {
+) : OverlayManager.FailureListener {
 
     private var recoveryJob: Job? = null
+
+    init {
+        if (overlayManager is OverlayManager) {
+            overlayManager.failureListener = this
+        }
+    }
+
+    override fun onOverlayInterrupted(reason: String) {
+        handleUnexpectedInterruption(reason)
+    }
 
     /**
      * Explicit user request to enable AssistX.
@@ -51,6 +66,7 @@ class RuntimeController(
         preferences?.let { prefs ->
             scope.launch(ioDispatcher) {
                 prefs.setDesiredEnabled(true)
+                prefs.setPausedForPayments(false)
             }
         }
 
@@ -100,6 +116,36 @@ class RuntimeController(
 
         // 2. Stop Foreground Service
         serviceLauncher.stopForegroundService()
+
+        stateCoordinator.updateRuntimeState(RuntimeState.STOPPED)
+    }
+
+    /**
+     * Explicit user request to pause AssistX before opening financial/payment applications.
+     * Detaches the floating overlay from WindowManager, stops the foreground service and notification,
+     * and requests the active AccessibilityService to disable itself.
+     */
+    fun pauseForPayments() {
+        recoveryJob?.cancel()
+        recoveryPolicy.resetBudget()
+        stateCoordinator.updateDesiredState(DesiredState.PAUSED_FOR_PAYMENTS)
+        stateCoordinator.updateRuntimeState(RuntimeState.STOPPING)
+
+        preferences?.let { prefs ->
+            scope.launch(ioDispatcher) {
+                prefs.setPausedForPayments(true)
+                prefs.setDesiredEnabled(false)
+            }
+        }
+
+        // 1. Immediately detach overlay window from WindowManager
+        overlayManager.detachOverlay()
+
+        // 2. Stop foreground service and remove ongoing notification
+        serviceLauncher.stopForegroundService()
+
+        // 3. Request AccessibilityService to disable itself
+        actionExecutor.disableAccessibilityService()
 
         stateCoordinator.updateRuntimeState(RuntimeState.STOPPED)
     }
@@ -171,9 +217,17 @@ class RuntimeController(
     fun restoreStateOnLaunch() {
         preferences?.let { prefs ->
             scope.launch(ioDispatcher) {
+                val isPaused = prefs.isPausedForPaymentsFlow.first()
+                if (isPaused) {
+                    withContext(Dispatchers.Main) {
+                        stateCoordinator.updateDesiredState(DesiredState.PAUSED_FOR_PAYMENTS)
+                        stateCoordinator.updateRuntimeState(RuntimeState.STOPPED)
+                    }
+                    return@launch
+                }
                 val shouldEnable = prefs.desiredEnabledFlow.first()
                 if (shouldEnable) {
-                    scope.launch {
+                    withContext(Dispatchers.Main) {
                         startAssistant()
                     }
                 }

@@ -51,6 +51,9 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+signing.properties
+keystore.properties
+release-keystore.*
 
 # Google Services (Firebase)
 google-services.json

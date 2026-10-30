@@ -5,6 +5,9 @@
     <!-- Overlay permission for floating button -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Haptic feedback vibration permission -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Foreground service permissions for background survival -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

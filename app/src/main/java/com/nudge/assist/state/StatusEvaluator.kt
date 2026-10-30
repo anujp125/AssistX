@@ -14,7 +14,8 @@ enum class UserFacingStatus(val label: String) {
     INTERRUPTED("Interrupted"),
     RECOVERING("Recovering"),
     RECOVERY_REQUIRED("Recovery Required"),
-    CHECKING_STATUS("Checking Status")
+    CHECKING_STATUS("Checking Status"),
+    PAUSED_FOR_PAYMENTS("Paused for Payments")
 }
 
 object StatusEvaluator {
@@ -28,6 +29,11 @@ object StatusEvaluator {
      * 3. Unknown observations never produce a false ACTIVE status.
      */
     fun deriveUserFacingStatus(snapshot: AppStateSnapshot): UserFacingStatus {
+        // Priority 0: Explicit Pause for Payments
+        if (snapshot.desiredState == DesiredState.PAUSED_FOR_PAYMENTS) {
+            return UserFacingStatus.PAUSED_FOR_PAYMENTS
+        }
+
         // Priority 1: User explicitly disabled AssistX
         if (snapshot.desiredState == DesiredState.DISABLED) {
             return UserFacingStatus.DISABLED
@@ -80,7 +86,7 @@ object StatusEvaluator {
      * Determines whether the primary physical button action (e.g. Lock Screen) is currently executable.
      */
     fun deriveActionReadiness(snapshot: AppStateSnapshot): ActionReadiness {
-        if (snapshot.desiredState == DesiredState.DISABLED) {
+        if (snapshot.desiredState == DesiredState.DISABLED || snapshot.desiredState == DesiredState.PAUSED_FOR_PAYMENTS) {
             return ActionReadiness.BLOCKED
         }
         if (snapshot.overlayState != OverlayState.ATTACHED) {

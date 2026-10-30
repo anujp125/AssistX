@@ -33,6 +33,12 @@ class AssistApplication : Application() {
     lateinit var accessibilityAdapter: AndroidAccessibilityAdapter
         private set
 
+    lateinit var accessibilityStateManager: com.nudge.assist.accessibility.AccessibilityStateManager
+        private set
+
+    lateinit var actionDispatcher: com.nudge.assist.accessibility.ActionDispatcher
+        private set
+
     lateinit var diagnosticRecorder: DiagnosticRecorder
         private set
 
@@ -60,16 +66,30 @@ class AssistApplication : Application() {
         val database = DiagnosticDatabase.getInstance(this)
         diagnosticRecorder = DiagnosticRecorder(database.diagnosticDao())
 
-        // 3. Overlay Manager
+        // 3. Centralized Accessibility State Manager & Action Dispatcher
+        accessibilityStateManager = com.nudge.assist.accessibility.AccessibilityStateManager(
+            context = this,
+            stateCoordinator = stateCoordinator,
+            diagnosticRecorder = diagnosticRecorder
+        )
+        actionDispatcher = com.nudge.assist.accessibility.ActionDispatcher(
+            actionExecutor = AndroidActionExecutor(this),
+            accessibilityStateManager = accessibilityStateManager,
+            diagnosticRecorder = diagnosticRecorder
+        )
+
+        // 4. Overlay Manager
         overlayManager = OverlayManager(
             context = this,
             stateCoordinator = stateCoordinator,
             permissionAdapter = overlayPermissionAdapter,
             preferences = overlayPreferences,
-            actionExecutor = AndroidActionExecutor(this)
+            actionExecutor = AndroidActionExecutor(this),
+            accessibilityStateManager = accessibilityStateManager,
+            actionDispatcher = actionDispatcher
         )
 
-        // 4. Runtime Controller
+        // 5. Runtime Controller
         runtimeController = RuntimeController(
             context = this,
             stateCoordinator = stateCoordinator,
@@ -77,10 +97,12 @@ class AssistApplication : Application() {
             recoveryPolicy = RecoveryPolicy(),
             permissionAdapter = overlayPermissionAdapter,
             preferences = overlayPreferences,
-            serviceLauncher = AndroidServiceLauncher(this)
+            serviceLauncher = AndroidServiceLauncher(this),
+            actionExecutor = AndroidActionExecutor(this)
         )
+        overlayManager.failureListener = runtimeController
 
-        // 5. Restore saved user state
+        // 6. Restore saved user state
         runtimeController.restoreStateOnLaunch()
     }
 

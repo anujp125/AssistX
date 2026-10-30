@@ -31,22 +31,28 @@
 | **D-018** | Recovery Bounds | **Max 3 retries**, exponential backoff (1s, 2s, 5s), 60s cooldown reset | **Approved** | Prevents battery-draining infinite recovery loops. |
 | **D-019** | User Disablement | Disabling via Studio **immediately suppresses and cancels all recovery** | **Approved** | Strict user intent precedence. |
 | **D-020** | Licensing | **GNU General Public License v3.0 (GPLv3)** | **Approved** | Open-source copyleft protection. |
+| **D-021** | Payment Safety Mode | **One-tap pause invoking `disableSelf()` and detaching overlay** with double-approval modal | **Approved** | Protects UPI applications (BHIM, GPay, PhonePe) from accessibility blocks. |
+| **D-022** | Action-Specific Gating | Centralized `AssistAction` capability mapping & `ActionDispatcher` with **zero-replay guarantee** | **Approved** | Non-accessibility actions run unblocked; gated actions trigger Metro dialog. |
+| **D-023** | Metro UI Language | **0dp sharp geometry, 2dp borders, Selawik typography, WCAG AA compliance** | **Approved** | Pure Windows Phone Metro visual style, eliminated decorative AI dots/badges. |
+| **D-024** | Action Popout Array | **Configurable orientation (H/V), adaptive expansion, 46/54/62dp sizes, optional capsule** | **Approved** | Full customization in Settings accordion. |
+| **D-025** | Screen-Off Lifecycle | **Detach overlay on screen-off, reattach on screen-wake** | **Approved** | Conserves battery and avoids stale window rendering while locked. |
+| **D-026** | Display Rotation | **Coordinate clamping and mirror-to-nearest-edge on rotation** | **Approved** | Prevents off-screen floating button bugs across portrait and landscape. |
 
 ---
 
-## 2. Strictly Scoped 4-Feature Set
+## 2. Strictly Scoped Core Feature Set
 
-Per owner decision on 2026-10-30, the scope is strictly restricted to 4 essential features:
+Per owner decisions on 2026-10-30, the core scope is strictly verified across:
 1. **Screen Off** (`GLOBAL_ACTION_LOCK_SCREEN` — Implemented & Verified)
 2. **Home** (`GLOBAL_ACTION_HOME` — Implemented & Verified)
-3. **Screenshot** (`GLOBAL_ACTION_TAKE_SCREENSHOT` — Next Sprint F-02)
-4. **Volume** (`AudioManager.adjustStreamVolume` with `FLAG_SHOW_UI` — Sprint F-03)
-
-*All other features (Back button, Recent Apps task switcher, custom action menus) are removed from the roadmap.*
+3. **Screenshot** (`GLOBAL_ACTION_TAKE_SCREENSHOT` — Implemented & Verified)
+4. **Volume** (`AudioManager.adjustStreamVolume` with `FLAG_SHOW_UI` — Implemented & Verified)
+5. **Payment Safety Mode** (`AccessibilityService.disableSelf()` — Implemented & Verified)
 
 | Feature Sprint | Capability | Approved Platform Design | Notes / Constraints |
 |:---|:---|:---|:---|
 | **F-01: Baseline Audit** | Baseline validation & regression suite | Complete baseline verification | **Passed** (49 unit tests, hardware verified). |
-| **F-02: Screenshot Action** | Capture screen | `AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT` | Native system screenshot (API 28+). No media projection dialogs or storage risks. |
-| **F-03: Volume Control** | Adjust volume | `AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)` | Opens native system volume slider without custom floating bars. |
-| **F-04: Hardware Regression** | Full verification on target phone | 4-feature test run on Realme Narzo 30 4G | Real-device validation of the final 4-feature build. |
+| **F-02: Screenshot Action** | Capture screen | `AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT` | Native system screenshot (API 28+). No media projection dialogs or storage risks. **Passed**. |
+| **F-03: Volume Control** | Adjust volume | `AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)` | Opens native system volume slider without custom floating bars. **Passed**. |
+| **F-04: Hardware Regression** | Full verification on target phone | Core feature test run on Realme Narzo 30 4G | Real-device validation of the final release candidate build. **Passed**. |
+| **F-05: UPI Safety & Metro UI** | Payment Safety & Metro UI Polish | `disableSelf()` modal & 0dp Metro design system | Verified on real hardware; 63 unit tests passing. **Passed**. |

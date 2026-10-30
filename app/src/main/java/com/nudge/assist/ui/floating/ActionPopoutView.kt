@@ -7,7 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.RectF
@@ -18,16 +18,21 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.animation.OvershootInterpolator
 import com.nudge.assist.R
+import com.nudge.assist.ui.haptics.MetroHaptics
 import kotlin.math.hypot
+
+enum class PopoutAction {
+    SCREENSHOT,
+    VOLUME,
+    POWER
+}
 
 /**
  * 3 separate circular popout buttons expanding vertically downwards or upwards from the floating button.
  * - Minimalist textless design using custom user-selected iconography (Screenshot, Volume, Power).
- * - Custom icons scaled to acquire 40-50% (~25dp span) of each 54dp popup button.
- * - Screenshot & Volume tinted pure white with subtle white accents on dark obsidian base.
- * - Power tinted vivid coral red (#F87171) with soft red accents on dark obsidian base.
- * - Strict 12dp margin from the floating button with adaptive direction selection based on remaining screen pixels.
- * - Full-screen dismiss scrim: outside touches safely dismiss the menu without activating background apps.
+ * - Full customizable array settings: spacing, margin from anchor, orientation (auto/down/up), order.
+ * - Customizable background capsule container element behind the buttons.
+ * - Integrated MetroHaptics tactile feedback.
  */
 class ActionPopoutView @JvmOverloads constructor(
     context: Context,
@@ -47,6 +52,7 @@ class ActionPopoutView @JvmOverloads constructor(
     private val density = context.resources.displayMetrics.density
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { listener?.onDismissRequested() }
+    private val haptics = MetroHaptics(context)
 
     // Anchor positioning parameters (screen coordinates and dimensions of floating button)
     private var anchorX = 0f
@@ -54,78 +60,109 @@ class ActionPopoutView @JvmOverloads constructor(
     private var anchorWidth = 56f * density
     private var anchorHeight = 56f * density
 
-    // Target icon footprint: ~45% of 54dp circle = 24.3dp (~24.5dp)
-    private val iconTargetSpan = 24.5f * density
+    // Customization Settings
+    var popoutButtonSizeDp: Int = 54
+        private set
+    var popoutOrientation: String = "AUTO"
+        private set
+    var popoutItemSpacingDp: Int = 10
+        private set
+    var popoutMarginDp: Int = 12
+        private set
+    var popoutOrder: String = "SCREENSHOT_VOLUME_POWER"
+        private set
 
-    // User-uploaded icon bitmaps (decoded once from drawables)
-    private val screenshotBitmap: Bitmap? by lazy {
-        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_screenshot)
-    }
-    private val volumeBitmap: Bitmap? by lazy {
-        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_volume)
-    }
-    private val powerBitmap: Bitmap? by lazy {
-        BitmapFactory.decodeResource(context.resources, R.drawable.ic_action_power)
-    }
+    // Background Capsule Settings
+    var capsuleEnabled: Boolean = false
+        private set
+    var capsuleStyle: String = "OBSIDIAN"
+        private set
+    var capsuleCornerRadius: String = "PILL"
+        private set
+    private var accentColorInt: Int = Color.parseColor("#0050EF")
 
-    // Paint filters to recolor/tint icons appropriately
-    // Screenshot & Volume: Tinted Pure White
+    // Target icon footprint: ~45% of button size
+    private val iconTargetSpan: Float
+        get() = (popoutButtonSizeDp * 0.45f) * density
+
+    // Shared immutable icon bitmaps from cache
+    private val screenshotBitmap: Bitmap?
+        get() = OverlayBitmapCache.getScreenshotBitmap(context)
+    private val volumeBitmap: Bitmap?
+        get() = OverlayBitmapCache.getVolumeBitmap(context)
+    private val powerBitmap: Bitmap?
+        get() = OverlayBitmapCache.getPowerBitmap(context)
+
+    // Paint filters
     private val whiteIconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
         colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
     }
 
-    // Power: Tinted Vivid Coral Red (#F87171)
     private val redIconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
         colorFilter = PorterDuffColorFilter(Color.rgb(248, 113, 113), PorterDuff.Mode.SRC_IN)
     }
 
-    // Full-screen subtle scrim
+    // Dismiss scrim
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = Color.BLACK
     }
 
-    // Dark Mode Base Fill
+    // Button Base Paints
     private val darkBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(240, 22, 22, 26) // Deep obsidian dark mode charcoal
+        color = Color.argb(240, 22, 22, 26)
     }
 
-    // Shadow Paint
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = Color.argb(60, 0, 0, 0)
     }
 
-    // Low-opacity White Accent for Shot & Vol (subtle and not too bold)
     private val whiteAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(18, 255, 255, 255) // Subtle soft white accent glow
+        color = Color.argb(18, 255, 255, 255)
     }
 
     private val whiteBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
-        color = Color.argb(45, 255, 255, 255) // Refined subtle white/grey accent rim
+        color = Color.argb(45, 255, 255, 255)
     }
 
-    // Low-opacity Red Accent for Power Button (subtle accent, not too bold)
     private val redAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(25, 239, 68, 68) // Soft coral-red accent wash
+        color = Color.argb(25, 239, 68, 68)
     }
 
     private val redBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
-        color = Color.argb(80, 239, 68, 68) // Tasteful coral-red accent rim
+        color = Color.argb(80, 239, 68, 68)
+    }
+
+    // Capsule Element Paints
+    private val capsuleBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+
+    private val capsuleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.8f * density
     }
 
     private var animProgress = 0f
+    private var dismissDelayMs = 4000L
+    private var popoutAnimator: ValueAnimator? = null
+
+    // Reusable geometry cache for zero allocations in onDraw
+    private val capsuleRect = RectF()
+    private val iconDstRect = RectF()
+    private val buttonCenters = arrayOf(PointF(), PointF(), PointF())
 
     init {
-        // Vertical cascading entrance animation
-        ValueAnimator.ofFloat(0f, 1f).apply {
+        filterTouchesWhenObscured = true
+        popoutAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 220
             interpolator = OvershootInterpolator(1.25f)
             addUpdateListener { animator ->
@@ -137,6 +174,13 @@ class ActionPopoutView @JvmOverloads constructor(
         resetAutoDismissTimer()
     }
 
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        handler.removeCallbacksAndMessages(null)
+        popoutAnimator?.cancel()
+        popoutAnimator = null
+    }
+
     fun configureAnchor(btnX: Float, btnY: Float, btnWidth: Float, btnHeight: Float) {
         this.anchorX = btnX
         this.anchorY = btnY
@@ -145,11 +189,40 @@ class ActionPopoutView @JvmOverloads constructor(
         invalidate()
     }
 
-    private var dismissDelayMs = 4000L
+    fun configureCustomizations(
+        buttonSizeDp: Int = 54,
+        orientation: String,
+        itemSpacingDp: Int,
+        marginDp: Int,
+        order: String,
+        capsuleEnabled: Boolean,
+        capsuleStyle: String,
+        capsuleCornerRadius: String,
+        accentHex: String
+    ) {
+        this.popoutButtonSizeDp = buttonSizeDp.coerceIn(36, 72)
+        this.popoutOrientation = orientation.uppercase()
+        this.popoutItemSpacingDp = itemSpacingDp.coerceIn(4, 24)
+        this.popoutMarginDp = marginDp.coerceIn(4, 30)
+        this.popoutOrder = order.uppercase()
+        this.capsuleEnabled = capsuleEnabled
+        this.capsuleStyle = capsuleStyle.uppercase()
+        this.capsuleCornerRadius = capsuleCornerRadius.uppercase()
+        try {
+            this.accentColorInt = Color.parseColor(accentHex)
+        } catch (e: Exception) {
+            this.accentColorInt = Color.parseColor("#0050EF")
+        }
+        invalidate()
+    }
 
     fun setDismissDelay(seconds: Int) {
         this.dismissDelayMs = (seconds * 1000L).coerceIn(1000L, 10000L)
         resetAutoDismissTimer()
+    }
+
+    fun setHapticFeedbackPreference(enabled: Boolean) {
+        haptics.isEnabled = enabled
     }
 
     fun resetAutoDismissTimer() {
@@ -157,96 +230,153 @@ class ActionPopoutView @JvmOverloads constructor(
         handler.postDelayed(autoDismissRunnable, dismissDelayMs)
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        handler.removeCallbacks(autoDismissRunnable)
+    private fun getCircleRadius(): Float = (popoutButtonSizeDp / 2f) * density
+
+    private fun getActionOrder(): List<PopoutAction> {
+        return when (popoutOrder) {
+            "POWER_VOLUME_SCREENSHOT" -> listOf(PopoutAction.POWER, PopoutAction.VOLUME, PopoutAction.SCREENSHOT)
+            "VOLUME_SCREENSHOT_POWER" -> listOf(PopoutAction.VOLUME, PopoutAction.SCREENSHOT, PopoutAction.POWER)
+            else -> listOf(PopoutAction.SCREENSHOT, PopoutAction.VOLUME, PopoutAction.POWER)
+        }
     }
 
-    private fun getCircleRadius(): Float = 27f * density
-
     /**
-     * Calculates the exact center coordinates for the 3 circular popout buttons.
-     * Enforces a strict margin from the floating button and chooses upward or downward
-     * arrangement based on hardcoded remaining pixel thresholds.
+     * Calculates the center coordinates for the 3 popup buttons based on margins and orientation.
+     * Mutates reusable PointF instances to achieve zero heap allocations per frame.
      */
-    private fun getCenterPoints(): Array<Pair<Float, Float>> {
+    private fun updateCenterPoints(): Array<PointF> {
         val radius = getCircleRadius()
-        val strictMargin = 12f * density // Strict pixel margin between floating button and nearest popup button
-        val itemSpacing = 10f * density  // Strict spacing between adjacent popup buttons
+        val strictMargin = popoutMarginDp * density
+        val itemSpacing = popoutItemSpacingDp * density
         val diameter = radius * 2f
 
-        // Convert anchor screen coordinates to local view coordinates to cancel any window insets/cutout offsets
         val popoutLoc = IntArray(2)
         getLocationOnScreen(popoutLoc)
         val relAnchorX = anchorX - popoutLoc[0]
         val relAnchorY = anchorY - popoutLoc[1]
 
+        val screenW = if (width > 0) width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
+        val screenH = if (height > 0) height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
+
+        val isHorizontal = popoutOrientation.contains("HORIZ") || popoutOrientation == "LEFT" || popoutOrientation == "RIGHT"
+
+        if (isHorizontal) {
+            val btnCenterY = relAnchorY + (anchorHeight / 2f)
+            val minY = radius + (44f * density)
+            val maxY = screenH - radius - (56f * density)
+            val cy = btnCenterY.coerceIn(minY, maxY)
+
+            val arrayWidth = (3f * diameter) + (2f * itemSpacing)
+            val edgeBuffer = 16f * density
+            val spaceNeededLeft = strictMargin + arrayWidth + edgeBuffer
+            val spaceNeededRight = strictMargin + arrayWidth + edgeBuffer
+
+            val buttonRight = relAnchorX + anchorWidth
+            val buttonLeft = relAnchorX
+            val remainingLeft = buttonLeft
+            val remainingRight = screenW - buttonRight
+
+            val isExpandingRight = when (popoutOrientation) {
+                "RIGHT" -> true
+                "LEFT" -> false
+                else -> { // "HORIZONTAL", "HORIZ_AUTO"
+                    if (remainingRight >= spaceNeededRight) true
+                    else if (remainingLeft >= spaceNeededLeft) false
+                    else remainingRight >= remainingLeft
+                }
+            }
+
+            if (isExpandingRight) {
+                val cx0 = buttonRight + strictMargin + radius
+                val cx1 = cx0 + diameter + itemSpacing
+                val cx2 = cx1 + diameter + itemSpacing
+                buttonCenters[0].set(cx0, cy)
+                buttonCenters[1].set(cx1, cy)
+                buttonCenters[2].set(cx2, cy)
+            } else {
+                val cx0 = buttonLeft - strictMargin - radius
+                val cx1 = cx0 - diameter - itemSpacing
+                val cx2 = cx1 - diameter - itemSpacing
+                buttonCenters[0].set(cx0, cy)
+                buttonCenters[1].set(cx1, cy)
+                buttonCenters[2].set(cx2, cy)
+            }
+            return buttonCenters
+        }
+
+        // VERTICAL layout
         val btnCenterX = relAnchorX + (anchorWidth / 2f)
         val minX = radius + (8f * density)
-        val maxX = (if (width > 0) width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()) - radius - (8f * density)
+        val maxX = screenW - radius - (8f * density)
         val cx = btnCenterX.coerceIn(minX, maxX)
 
-        // Array height: 3 buttons (54dp each) + 2 spacing gaps (10dp each) = 182dp
         val arrayHeight = (3f * diameter) + (2f * itemSpacing)
-
-        // Hardcoded edge buffers for comfortable margins in either direction
-        val topEdgeBuffer = 44f * density // Top safe buffer (clears status bar & display cutout)
-        val bottomEdgeBuffer = 56f * density // Bottom safe buffer (clears navigation bar & gesture pill)
+        val topEdgeBuffer = 44f * density
+        val bottomEdgeBuffer = 56f * density
 
         val totalSpaceNeededDown = strictMargin + arrayHeight + bottomEdgeBuffer
         val totalSpaceNeededUp = strictMargin + arrayHeight + topEdgeBuffer
 
-        val screenH = if (height > 0) height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
         val buttonBottom = relAnchorY + anchorHeight
         val buttonTop = relAnchorY
-
         val remainingDown = screenH - buttonBottom
         val remainingUp = buttonTop
 
-        val isExpandingDownwards = when {
-            remainingDown >= totalSpaceNeededDown -> true
-            remainingUp >= totalSpaceNeededUp -> false
-            else -> remainingDown >= remainingUp
+        val isExpandingDownwards = when (popoutOrientation) {
+            "DOWN" -> true
+            "UP" -> false
+            else -> { // "AUTO", "VERTICAL"
+                when {
+                    remainingDown >= totalSpaceNeededDown -> true
+                    remainingUp >= totalSpaceNeededUp -> false
+                    else -> remainingDown >= remainingUp
+                }
+            }
         }
 
-        return if (isExpandingDownwards) {
-            // Arrange downwards: Circle 0 is strictMargin below button, Circle 1 next, Circle 2 lowest
+        if (isExpandingDownwards) {
             val cy0 = buttonBottom + strictMargin + radius
             val cy1 = cy0 + diameter + itemSpacing
             val cy2 = cy1 + diameter + itemSpacing
-            arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+            buttonCenters[0].set(cx, cy0)
+            buttonCenters[1].set(cx, cy1)
+            buttonCenters[2].set(cx, cy2)
         } else {
-            // Arrange upwards: Circle 0 is strictMargin above button, Circle 1 next, Circle 2 highest
             val cy0 = buttonTop - strictMargin - radius
             val cy1 = cy0 - diameter - itemSpacing
             val cy2 = cy1 - diameter - itemSpacing
-            arrayOf(Pair(cx, cy0), Pair(cx, cy1), Pair(cx, cy2))
+            buttonCenters[0].set(cx, cy0)
+            buttonCenters[1].set(cx, cy1)
+            buttonCenters[2].set(cx, cy2)
         }
+        return buttonCenters
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         resetAutoDismissTimer()
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> return true // Consume touch to shield background apps
+            MotionEvent.ACTION_DOWN -> return true
             MotionEvent.ACTION_UP -> {
                 val touchX = event.x
                 val touchY = event.y
-                val points = getCenterPoints()
+                val points = updateCenterPoints()
                 val touchRadius = getCircleRadius() + (14f * density)
+                val actions = getActionOrder()
 
-                for (i in points.indices) {
-                    val (cx, cy) = points[i]
-                    if (hypot(touchX - cx, touchY - cy) <= touchRadius) {
-                        when (i) {
-                            0 -> {
+                for (i in 0 until 3) {
+                    val pt = points[i]
+                    if (hypot(touchX - pt.x, touchY - pt.y) <= touchRadius) {
+                        haptics.tap(this)
+                        when (actions[i]) {
+                            PopoutAction.SCREENSHOT -> {
                                 android.util.Log.i("AssistX", "ActionPopoutView: Screenshot clicked")
                                 listener?.onScreenshotClicked()
                             }
-                            1 -> {
+                            PopoutAction.VOLUME -> {
                                 android.util.Log.i("AssistX", "ActionPopoutView: Volume clicked")
                                 listener?.onVolumeClicked()
                             }
-                            2 -> {
+                            PopoutAction.POWER -> {
                                 android.util.Log.i("AssistX", "ActionPopoutView: Power clicked")
                                 listener?.onPowerClicked()
                             }
@@ -254,7 +384,7 @@ class ActionPopoutView @JvmOverloads constructor(
                         return true
                     }
                 }
-                // Tapped anywhere outside the 3 circles -> safely dismiss popout
+                // Tapped outside
                 android.util.Log.i("AssistX", "ActionPopoutView: Tap outside captured, dismissing popout")
                 listener?.onDismissRequested()
                 return true
@@ -269,48 +399,94 @@ class ActionPopoutView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0 || h <= 0) return
 
-        // 1. Draw subtle full-screen dismiss scrim (18% black)
+        // 1. Scrim
         scrimPaint.alpha = (animProgress * 45).toInt().coerceIn(0, 45)
         canvas.drawRect(0f, 0f, w, h, scrimPaint)
 
         val radius = getCircleRadius()
-        val points = getCenterPoints()
+        val points = updateCenterPoints()
+        val actions = getActionOrder()
 
-        // 2. Circle 0: Screenshot [ Custom User Icon ]
-        drawCircularButton(
-            canvas = canvas,
-            cx = points[0].first,
-            cy = points[0].second,
-            radius = radius,
-            animOffset = 0f,
-            isPower = false
-        ) { c, cx, cy ->
-            drawCustomScreenshotIcon(c, cx, cy)
+        // 2. Background Capsule Element (if enabled)
+        if (capsuleEnabled) {
+            drawBackgroundCapsule(canvas, points, radius)
         }
 
-        // 3. Circle 1: Volume [ Custom User Icon ]
-        drawCircularButton(
-            canvas = canvas,
-            cx = points[1].first,
-            cy = points[1].second,
-            radius = radius,
-            animOffset = 0.1f,
-            isPower = false
-        ) { c, cx, cy ->
-            drawCustomVolumeIcon(c, cx, cy)
+        // 3. Draw 3 Circular Action Buttons
+        for (i in 0 until 3) {
+            val pt = points[i]
+            val cx = pt.x
+            val cy = pt.y
+            val action = actions[i]
+            val animOffset = i * 0.08f
+            val isPower = (action == PopoutAction.POWER)
+
+            drawCircularButton(
+                canvas = canvas,
+                cx = cx,
+                cy = cy,
+                radius = radius,
+                animOffset = animOffset,
+                isPower = isPower
+            ) { c, btnCx, btnCy ->
+                when (action) {
+                    PopoutAction.SCREENSHOT -> drawCustomScreenshotIcon(c, btnCx, btnCy)
+                    PopoutAction.VOLUME -> drawCustomVolumeIcon(c, btnCx, btnCy)
+                    PopoutAction.POWER -> drawCustomPowerIcon(c, btnCx, btnCy)
+                }
+            }
+        }
+    }
+
+    private fun drawBackgroundCapsule(canvas: Canvas, points: Array<PointF>, radius: Float) {
+        val minX = minOf(points[0].x, points[1].x, points[2].x)
+        val maxX = maxOf(points[0].x, points[1].x, points[2].x)
+        val minY = minOf(points[0].y, points[1].y, points[2].y)
+        val maxY = maxOf(points[0].y, points[1].y, points[2].y)
+        val capPad = 8f * density
+
+        val capLeft = minX - radius - capPad
+        val capRight = maxX + radius + capPad
+        val capTop = minY - radius - capPad
+        val capBottom = maxY + radius + capPad
+        capsuleRect.set(capLeft, capTop, capRight, capBottom)
+
+        val cornerR = when (capsuleCornerRadius) {
+            "METRO_SQUARE" -> 0f
+            "ROUNDED" -> 14f * density
+            else -> minOf(capRight - capLeft, capBottom - capTop) / 2f // "PILL"
         }
 
-        // 4. Circle 2: Power [ Custom User Icon ]
-        drawCircularButton(
-            canvas = canvas,
-            cx = points[2].first,
-            cy = points[2].second,
-            radius = radius,
-            animOffset = 0.2f,
-            isPower = true
-        ) { c, cx, cy ->
-            drawCustomPowerIcon(c, cx, cy)
+        when (capsuleStyle) {
+            "METRO_BLACK" -> {
+                capsuleBasePaint.color = Color.BLACK
+                capsuleBasePaint.alpha = (animProgress * 240).toInt().coerceIn(0, 240)
+                capsuleBorderPaint.color = accentColorInt
+                capsuleBorderPaint.alpha = (animProgress * 255).toInt().coerceIn(0, 255)
+            }
+            "SOLID_ACCENT" -> {
+                capsuleBasePaint.color = accentColorInt
+                capsuleBasePaint.alpha = (animProgress * 230).toInt().coerceIn(0, 230)
+                capsuleBorderPaint.color = Color.WHITE
+                capsuleBorderPaint.alpha = (animProgress * 180).toInt().coerceIn(0, 180)
+            }
+            "OUTLINE_ONLY" -> {
+                capsuleBasePaint.color = Color.TRANSPARENT
+                capsuleBorderPaint.color = accentColorInt
+                capsuleBorderPaint.alpha = (animProgress * 255).toInt().coerceIn(0, 255)
+            }
+            else -> { // "OBSIDIAN" default
+                capsuleBasePaint.color = Color.argb(225, 18, 18, 22)
+                capsuleBasePaint.alpha = (animProgress * 225).toInt().coerceIn(0, 225)
+                capsuleBorderPaint.color = Color.argb(75, 255, 255, 255)
+                capsuleBorderPaint.alpha = (animProgress * 75).toInt().coerceIn(0, 75)
+            }
         }
+
+        if (capsuleStyle != "OUTLINE_ONLY") {
+            canvas.drawRoundRect(capsuleRect, cornerR, cornerR, capsuleBasePaint)
+        }
+        canvas.drawRoundRect(capsuleRect, cornerR, cornerR, capsuleBorderPaint)
     }
 
     private fun drawCircularButton(
@@ -353,42 +529,30 @@ class ActionPopoutView @JvmOverloads constructor(
             canvas.drawCircle(cx, cy, radius, whiteBorderPaint)
         }
 
-        // Custom Tinted Icon (40-50% of button space)
+        // Custom Tinted Icon
         drawIcon(canvas, cx, cy)
 
         canvas.restore()
     }
 
-    /**
-     * Renders the user's custom Screenshot icon (smartphone with screen crop & home dot).
-     * Tinted crisp pure white, acquiring ~45% of the button space (24.5dp of 54dp circle).
-     */
     private fun drawCustomScreenshotIcon(canvas: Canvas, cx: Float, cy: Float) {
         val bmp = screenshotBitmap ?: return
         val halfSpan = iconTargetSpan / 2f
-        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
-        canvas.drawBitmap(bmp, null, dstRect, whiteIconPaint)
+        iconDstRect.set(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, iconDstRect, whiteIconPaint)
     }
 
-    /**
-     * Renders the user's custom Volume icon (speaker with dual soundwaves).
-     * Tinted crisp pure white, acquiring ~45% of the button space (24.5dp of 54dp circle).
-     */
     private fun drawCustomVolumeIcon(canvas: Canvas, cx: Float, cy: Float) {
         val bmp = volumeBitmap ?: return
         val halfSpan = iconTargetSpan / 2f
-        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
-        canvas.drawBitmap(bmp, null, dstRect, whiteIconPaint)
+        iconDstRect.set(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, iconDstRect, whiteIconPaint)
     }
 
-    /**
-     * Renders the user's custom Power icon (circular ring enclosing IEC power symbol).
-     * Tinted vibrant coral-red (#F87171), acquiring ~45% of the button space (24.5dp of 54dp circle).
-     */
     private fun drawCustomPowerIcon(canvas: Canvas, cx: Float, cy: Float) {
         val bmp = powerBitmap ?: return
         val halfSpan = iconTargetSpan / 2f
-        val dstRect = RectF(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
-        canvas.drawBitmap(bmp, null, dstRect, redIconPaint)
+        iconDstRect.set(cx - halfSpan, cy - halfSpan, cx + halfSpan, cy + halfSpan)
+        canvas.drawBitmap(bmp, null, iconDstRect, redIconPaint)
     }
 }

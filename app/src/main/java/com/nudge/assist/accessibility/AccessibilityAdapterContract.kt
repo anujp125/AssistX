@@ -3,6 +3,7 @@ package com.nudge.assist.accessibility
 import android.content.Context
 import android.content.Intent
 import com.nudge.assist.state.AccessibilityState
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Abstraction for observing Accessibility Service settings and connection state.
@@ -13,4 +14,15 @@ interface AccessibilityAdapterContract {
     fun isServiceConnected(): Boolean
     fun createSettingsIntent(context: Context?): Intent
 }
+
+/**
+ * Centralized Accessibility State Manager contract.
+ * Exposes real-time observable state, synchronous validation, and settings launcher.
+ */
+interface AccessibilityStateManagerContract : AccessibilityAdapterContract {
+    val state: StateFlow<AccessibilityState>
+    fun checkCurrentState(context: Context? = null): AccessibilityState
+    fun openAccessibilitySettings(context: Context): Boolean
+}
+
 

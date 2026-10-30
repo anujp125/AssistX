@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -21,6 +22,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
 
     companion object {
         private val KEY_DESIRED_ENABLED = booleanPreferencesKey("desired_enabled")
+        private val KEY_PAUSED_FOR_PAYMENTS = booleanPreferencesKey("paused_for_payments")
         private val KEY_POSITION_X = intPreferencesKey("button_position_x")
         private val KEY_POSITION_Y = intPreferencesKey("button_position_y")
 
@@ -31,10 +33,33 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private val KEY_POPOUT_DISMISS_SECONDS = intPreferencesKey("popout_dismiss_seconds")
         private val KEY_HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback_enabled")
         private val KEY_SNAP_TO_EDGE = booleanPreferencesKey("snap_to_edge_enabled")
+        private val KEY_ACCENT_HEX = stringPreferencesKey("accent_hex")
+        private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
+
+        // Floating Button Customization Keys
+        private val KEY_BUTTON_SHAPE = stringPreferencesKey("button_shape")
+        private val KEY_BUTTON_STYLE = stringPreferencesKey("button_style")
+        private val KEY_BUTTON_COLOR_MODE = stringPreferencesKey("button_color_mode")
+
+        // Popout Array Customization Keys
+        private val KEY_POPOUT_BUTTON_SIZE_DP = intPreferencesKey("popout_button_size_dp")
+        private val KEY_POPOUT_ORIENTATION = stringPreferencesKey("popout_orientation")
+        private val KEY_POPOUT_ITEM_SPACING_DP = intPreferencesKey("popout_item_spacing_dp")
+        private val KEY_POPOUT_MARGIN_DP = intPreferencesKey("popout_margin_dp")
+        private val KEY_POPOUT_ORDER = stringPreferencesKey("popout_order")
+
+        // Background Capsule Keys
+        private val KEY_CAPSULE_ENABLED = booleanPreferencesKey("capsule_enabled")
+        private val KEY_CAPSULE_STYLE = stringPreferencesKey("capsule_style")
+        private val KEY_CAPSULE_CORNER_RADIUS = stringPreferencesKey("capsule_corner_radius")
     }
 
     override val desiredEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[KEY_DESIRED_ENABLED] ?: false
+    }
+
+    override val isPausedForPaymentsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[KEY_PAUSED_FOR_PAYMENTS] ?: false
     }
 
     override val positionFlow: Flow<OverlayPosition> = context.dataStore.data.map { preferences ->
@@ -51,13 +76,41 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             idleFadeSeconds = preferences[KEY_IDLE_FADE_SECONDS] ?: 3,
             popoutDismissSeconds = preferences[KEY_POPOUT_DISMISS_SECONDS] ?: 4,
             hapticFeedbackEnabled = preferences[KEY_HAPTIC_FEEDBACK] ?: true,
-            snapToEdgeEnabled = preferences[KEY_SNAP_TO_EDGE] ?: true
+            snapToEdgeEnabled = preferences[KEY_SNAP_TO_EDGE] ?: true,
+            accentHex = preferences[KEY_ACCENT_HEX] ?: "#0050EF",
+            themeMode = preferences[KEY_THEME_MODE] ?: "dark",
+
+            buttonShape = preferences[KEY_BUTTON_SHAPE] ?: "CIRCLE",
+            buttonStyle = preferences[KEY_BUTTON_STYLE] ?: "METRO_OUTLINE",
+            buttonColorMode = preferences[KEY_BUTTON_COLOR_MODE] ?: "ACCENT",
+
+            popoutButtonSizeDp = preferences[KEY_POPOUT_BUTTON_SIZE_DP] ?: 54,
+            popoutOrientation = preferences[KEY_POPOUT_ORIENTATION] ?: "AUTO",
+            popoutItemSpacingDp = preferences[KEY_POPOUT_ITEM_SPACING_DP] ?: 10,
+            popoutMarginDp = preferences[KEY_POPOUT_MARGIN_DP] ?: 12,
+            popoutOrder = preferences[KEY_POPOUT_ORDER] ?: "SCREENSHOT_VOLUME_POWER",
+
+            capsuleEnabled = preferences[KEY_CAPSULE_ENABLED] ?: false,
+            capsuleStyle = preferences[KEY_CAPSULE_STYLE] ?: "OBSIDIAN",
+            capsuleCornerRadius = preferences[KEY_CAPSULE_CORNER_RADIUS] ?: "PILL"
         )
     }
 
     override suspend fun setDesiredEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_DESIRED_ENABLED] = enabled
+            if (enabled) {
+                preferences[KEY_PAUSED_FOR_PAYMENTS] = false
+            }
+        }
+    }
+
+    override suspend fun setPausedForPayments(paused: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_PAUSED_FOR_PAYMENTS] = paused
+            if (paused) {
+                preferences[KEY_DESIRED_ENABLED] = false
+            }
         }
     }
 
@@ -76,6 +129,22 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             preferences[KEY_POPOUT_DISMISS_SECONDS] = settings.popoutDismissSeconds
             preferences[KEY_HAPTIC_FEEDBACK] = settings.hapticFeedbackEnabled
             preferences[KEY_SNAP_TO_EDGE] = settings.snapToEdgeEnabled
+            preferences[KEY_ACCENT_HEX] = settings.accentHex
+            preferences[KEY_THEME_MODE] = settings.themeMode
+
+            preferences[KEY_BUTTON_SHAPE] = settings.buttonShape
+            preferences[KEY_BUTTON_STYLE] = settings.buttonStyle
+            preferences[KEY_BUTTON_COLOR_MODE] = settings.buttonColorMode
+
+            preferences[KEY_POPOUT_BUTTON_SIZE_DP] = settings.popoutButtonSizeDp
+            preferences[KEY_POPOUT_ORIENTATION] = settings.popoutOrientation
+            preferences[KEY_POPOUT_ITEM_SPACING_DP] = settings.popoutItemSpacingDp
+            preferences[KEY_POPOUT_MARGIN_DP] = settings.popoutMarginDp
+            preferences[KEY_POPOUT_ORDER] = settings.popoutOrder
+
+            preferences[KEY_CAPSULE_ENABLED] = settings.capsuleEnabled
+            preferences[KEY_CAPSULE_STYLE] = settings.capsuleStyle
+            preferences[KEY_CAPSULE_CORNER_RADIUS] = settings.capsuleCornerRadius
         }
     }
 
@@ -114,5 +183,82 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             preferences[KEY_SNAP_TO_EDGE] = enabled
         }
     }
-}
 
+    override suspend fun setAccentHex(hex: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_ACCENT_HEX] = hex
+        }
+    }
+
+    override suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_THEME_MODE] = mode
+        }
+    }
+
+    override suspend fun setButtonShape(shape: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_BUTTON_SHAPE] = shape
+        }
+    }
+
+    override suspend fun setButtonStyle(style: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_BUTTON_STYLE] = style
+        }
+    }
+
+    override suspend fun setButtonColorMode(colorMode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_BUTTON_COLOR_MODE] = colorMode
+        }
+    }
+
+    override suspend fun setPopoutButtonSizeDp(sizeDp: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_BUTTON_SIZE_DP] = sizeDp
+        }
+    }
+
+    override suspend fun setPopoutOrientation(orientation: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_ORIENTATION] = orientation
+        }
+    }
+
+    override suspend fun setPopoutItemSpacingDp(spacingDp: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_ITEM_SPACING_DP] = spacingDp
+        }
+    }
+
+    override suspend fun setPopoutMarginDp(marginDp: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_MARGIN_DP] = marginDp
+        }
+    }
+
+    override suspend fun setPopoutOrder(order: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_ORDER] = order
+        }
+    }
+
+    override suspend fun setCapsuleEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CAPSULE_ENABLED] = enabled
+        }
+    }
+
+    override suspend fun setCapsuleStyle(style: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CAPSULE_STYLE] = style
+        }
+    }
+
+    override suspend fun setCapsuleCornerRadius(radius: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CAPSULE_CORNER_RADIUS] = radius
+        }
+    }
+}

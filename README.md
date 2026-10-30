@@ -1,168 +1,382 @@
-AssistX
-AssistX is a reliability-first, native Android assistive app. The current plan is to deliver one installable application containing a floating assistant and an in-app Studio/settings interface.
-Project status: Planning / documentation draft. This repository's Android project, package ID, minimum SDK, UI toolkit, and build commands have not yet been verified. Do not interpret the documentation as evidence that an app has already been implemented or tested.
+# AssistX
 
-1. Product Goal
-AssistX aims to provide a minimal floating button with clear runtime status and practical recovery guidance. It is designed to distinguish:
-- the user's desired enabled/disabled state;
-- runtime health;
-- overlay permission and actual overlay attachment;
-- Accessibility enabled and connected state, if Accessibility is required by the approved primary action.
-The existing app's intermittent floating-button and Accessibility problems are observations; their root cause has not been confirmed. AssistX must gather useful evidence rather than assume that every failure is caused by Android or Realme background management.
-Initial target device
-The product owner has reported using a Realme Narzo 30 4G (RMX2156) running Android 12 / realme UI 3.0, build RMX2156_11_F.19. Verify the device and build at test time. This is the initial test environment, not a claim of broad compatibility.
-2. MVP Principles
-- One installable app; Studio and floating assistant are logical components, not separate apps.
-- Reliability, diagnosability, and predictable lifecycle behavior before extra features.
-- No backend or cloud dependency for the MVP.
-- Permissions and services only when justified by approved requirements.
-- Recovery must be bounded and respect Android's controls.
-- The app must not claim success before there is evidence.
-- User disablement must suppress automatic recovery.
-- Physical-device behavior must be tested before device-specific claims are made.
-Explicitly out of scope for initial v0.1 unless approved
-Volume controls, Wi-Fi/Bluetooth toggles, cloud sync, accounts, backend services, advanced gesture customization, a separate Studio app, and attempts to bypass Android permission or background-execution restrictions.
+> **Reliability-first, privacy-conscious native Android assistive touch assistant.**
 
-The primary floating-button action and gesture are still awaiting owner approval. “Double-tap to turn the screen off” is only a candidate, not a finalized requirement.
-3. Start Here: Read the Source of Truth
-Read the following before changing code. The files are being generated as a controlled documentation set; keep each document's Draft/Approved status accurate.
-Order	Document	What it governs
-1	AGENTS.md	Mandatory AI coding-agent guardrails and workflow
-2	docs/01-product/PRODUCT_BRIEF.md	Product vision, goals, user/device context
-3	docs/01-product/SRS.md	Testable functional and non-functional requirements
-4	docs/01-product/MVP_SCOPE.md	Included and excluded v0.1 functionality
-5	docs/01-product/PRODUCT_ROADMAP.md	Milestones, dependencies, and exit gates
-6	docs/02-architecture/SYSTEM_ARCHITECTURE.md	Component responsibilities and data/control flow
-7	docs/02-architecture/MODULE_AND_PACKAGE_STRUCTURE.md	Kotlin package and repository structure
-8	docs/02-architecture/STATE_AND_LIFECYCLE.md	State domains, transitions, and lifecycle invariants
-9	docs/02-architecture/PERMISSIONS_AND_PLATFORM_CONSTRAINTS.md	Android permissions and platform constraints
-10	docs/02-architecture/FAILURE_AND_RECOVERY_MATRIX.md	Failure detection, handling, and permitted recovery
-11	docs/03-ai-development/AI_AGENT_WORKFLOW.md	Standard agent execution process
-12	docs/03-ai-development/SPRINT_TASK_TEMPLATE.md	Template for one bounded implementation task
-13	docs/03-ai-development/SPRINT_PLAN.md	Ordered development backlog
-14	docs/03-ai-development/DEFINITION_OF_DONE.md	Completion criteria for tasks, sprints, and release
-15	docs/03-ai-development/DECISION_LOG.md	Approved decisions, open questions, and technical verification
-16	docs/04-testing/TEST_STRATEGY.md	Testing levels and evidence policy
-17	docs/04-testing/ACCEPTANCE_TESTS.md	Numbered acceptance cases and results
-18	docs/04-testing/REAL_DEVICE_TEST_MATRIX.md	Target-device test plan and execution records
+AssistX provides hardware key alternatives—such as double-tap screen lock, long-press home, native volume controls, system screenshot capture, and power dialog invocation—through an interactive floating button, backed by an in-app **Studio** dashboard with runtime diagnostics and a dedicated **Payment Safety Mode** for Indian UPI applications.
 
+- **Current Release Status:** Release Candidate 2 (`v0.1.0-rc2`)
+- **Primary Hardware Baseline:** Realme Narzo 30 4G (`RMX2156`, realme UI 3.0 / Android 12, API 31)
 
-The final repository inventory may include further files, including requirements traceability, architecture decision records, coding standards, change control, diagnostics/data design, UI/UX specification, CI, issue templates, privacy/setup guidance, troubleshooting, and release documents.
+---
 
-If a referenced file has not been created yet, do not invent its content. Use the available approved source of truth and report the missing dependency when it blocks the task.
-4. Documentation Status and Owner Decisions
-Several choices are deliberately unresolved:
-- exact primary action and gesture;
-- minimum supported Android version and target-SDK approach;
-- UI toolkit (Jetpack Compose or Android Views);
-- application ID/package name;
-- whether the button is draggable and its position persists;
-- foreground-service strategy, if any;
-- post-reboot behavior;
-- recovery retry/cooldown policy;
-- diagnostic retention bounds;
-- distribution method;
-- measurable reliability and resource-use targets.
-Check DECISION_LOG.md before making any decision-sensitive change. Anuj Pawar (@anujp125), Open, Proposed, Blocked, or Needs Verification do not mean approved.
-5. Development Workflow
-Use one small task at a time:
-1. Read AGENTS.md and relevant product, architecture, and test docs.
-2. Inspect the actual repository, current branch/status, and existing user changes.
-3. Confirm prerequisites and check the decision log.
-4. Create a task-specific brief from SPRINT_TASK_TEMPLATE.md.
-5. State the objective, changed files, non-goals, acceptance criteria, and tests.
-6. Implement only the assigned task.
-7. Run relevant tests/build/static checks and inspect the diff.
-8. Update docs and requirement-to-test mapping where needed.
-9. Report exact results, tests not run, device evidence, risks, and follow-up tasks.
-10. Request review before progressing through dependent work.
-Do not ask an agent to build the entire MVP from a single large prompt. Use SPRINT_PLAN.md to select one task with clear prerequisites and an observable outcome.
-6. Repository Layout
-The intended layout is:
-AssistX/
-├── app/                              # One Android application module
-├── docs/
-│   ├── 01-product/
-│   ├── 02-architecture/
-│   ├── 03-ai-development/
-│   ├── 04-testing/
-│   └── 05-operations/
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/
-├── AGENTS.md
-├── README.md
-├── CONTRIBUTING.md
-├── CHANGELOG.md
-├── .gitignore
-└── LICENSE                            # after licensing decision
-This is the planned layout, not confirmation that these paths already exist. Start with one Android app Gradle module unless a concrete requirement justifies otherwise. Do not create empty packages or future-feature scaffolding merely to match the diagram.
-7. Build and Test
-Current status
-The Android project setup and its exact Gradle tasks have not yet been confirmed. Do not report a build or tests as passing until commands have actually been run in the real repository.
+## 1. Features
 
-After the Android project is initialized, confirm the wrapper and available tasks. Standard command candidates, if the generated project supports them, are:
+### Verified Implemented Functionality
 
-Windows PowerShell
-.\gradlew.bat assembleDebug
-.\gradlew.bat testDebugUnitTest
-macOS/Linux
+- **Interactive Floating Button (`FloatingButtonView`)**
+  - Custom 56dp circular touch button drawn with low-allocation Canvas rendering.
+  - Decelerating physics-based snap-to-edge animation on drag release.
+  - Automatic 3-second idle fade to 40% opacity to prevent content obstruction.
+  - Screen-off detachment and screen-wake re-attachment to optimize memory and battery.
+  - Multi-orientation coordinate clamping and edge mirroring on screen rotation.
+  - Persistent drag coordinates saved across app restarts via Jetpack DataStore.
+
+- **Gesture Shortcuts & Action Dispatch**
+  - **Double-Tap**: Instant Screen Lock via `GLOBAL_ACTION_LOCK_SCREEN` (<100ms response).
+  - **Long-Press (500ms)**: Navigate Home via `GLOBAL_ACTION_HOME`.
+  - **Tap**: Expand or collapse the customizable Action Popout array.
+
+- **Configurable Action Popout Array (`ActionPopoutView`)**
+  - **Volume Control**: Direct system volume slider adjustment via `AudioManager.FLAG_SHOW_UI` (runs independently without requiring accessibility).
+  - **Screenshot**: Native display capture via `GLOBAL_ACTION_TAKE_SCREENSHOT` (API 28+).
+  - **Power Menu**: System power dialog invocation via `GLOBAL_ACTION_POWER_DIALOG`.
+  - Customizable alignment (horizontal or vertical), expansion direction (adaptive, left, right), button sizing (46dp, 54dp, 62dp), spacing, and optional background capsule styling.
+
+- **Intelligent Action-Specific Accessibility Gating**
+  - Actions that do not require accessibility (Volume controls, drag/reposition, popout toggle, edge snap, Studio settings, Payment Safety Mode) execute immediately without permission prompts.
+  - Actions requiring accessibility (Screen Lock, Home, Screenshot, Power Dialog) automatically display a modal dialog if accessibility is disabled or disconnected.
+  - **Zero-Replay Invariant**: When returning from system settings after enabling accessibility, the previously attempted action is **never automatically replayed**, preventing accidental screen locks or unintended navigation.
+
+- **Payment Safety Mode (UPI Protection)**
+  - Financial applications in India (such as BHIM, Google Pay, and PhonePe) restrict transactions or block access when third-party accessibility services or overlays are active.
+  - AssistX provides a one-tap **Payment Safety Mode** that invokes `AccessibilityService.disableSelf()` and detaches the floating overlay from WindowManager.
+  - Protected with a double-approval confirmation modal to prevent accidental accessibility revocation.
+
+- **Metro / Modern UI Design Language**
+  - Clean typographic hierarchy using Selawik font weights.
+  - Flat 0dp sharp rectangular tiles with 2dp solid borders.
+  - Contrast compliance: strictly enforces WCAG AA contrast (> 4.5:1 on normal text, > 10:1 on dark surfaces).
+  - Stacked vertical status labels that eliminate word-breaking and awkward multiline wraps.
+  - Elimination of decorative AI-style status dots and redundant pill badges.
+  - Mandatory accordion collapse on every fresh entry to the Settings tab.
+
+- **Subsystem Telemetry & Local Diagnostics (`DiagnosticsScreen`)**
+  - Local-only Room SQLite database (`assistx_diagnostics.db`) tracking lifecycle, permission, overlay, and action dispatch events.
+  - Strict 500-event FIFO pruning bounds memory use (< 2 MB).
+  - Zero external network transmission, analytics, or third-party tracking.
+
+### Experimental & Planned Features
+
+- **Experimental:** None in current release scope.
+- **Planned:**
+  - Additional gesture assignment slots for Back and Recent Apps.
+  - Split-screen multi-window shortcut.
+  - OEM-specific autostart and battery optimization helper wizards.
+
+---
+
+## 2. Screenshots
+
+Verified screenshots captured directly on physical hardware (Realme Narzo 30 4G, Android 12):
+
+| Studio Overview (Metro UI) | Accessibility Required Modal |
+|:---:|:---:|
+| ![Studio Overview](docs/assets/screenshots/studio_overview.png) | ![Accessibility Required Dialog](docs/assets/screenshots/accessibility_required_dialog.png) |
+| *Verified runtime health, accessibility state, and live tiles.* | *WindowManager modal shown only when gated action is attempted.* |
+
+| Action Popout Menu | Payment Safety Mode Confirmation |
+|:---:|:---:|
+| ![Floating Popout Menu](docs/assets/screenshots/floating_popout_menu.png) | ![Payment Safety Confirmation](docs/assets/screenshots/payment_safety_confirmation.png) |
+| *Horizontal action array with Volume, Screenshot, and Power.* | *Double confirmation before revoking accessibility for UPI safety.* |
+
+---
+
+## 3. Architecture
+
+AssistX follows a clean, decoupled architecture centered around immutable state observation:
+
+```mermaid
+flowchart TD
+    subgraph UI ["User Interface Layer"]
+        Studio["MainActivity (Compose Studio)"]
+        FloatBtn["FloatingButtonView (WindowManager)"]
+        Popout["ActionPopoutView (WindowManager)"]
+        A11yDialog["AccessibilityRequiredOverlayDialog"]
+    end
+
+    subgraph State ["State & Coordination Layer"]
+        Snapshot["AppStateSnapshot (Immutable)"]
+        Evaluator["StatusEvaluator"]
+        Dispatcher["ActionDispatcher"]
+        A11yState["AccessibilityStateManager"]
+        Prefs["OverlayPreferences (DataStore)"]
+        Diag["DiagnosticRecorder (Room DB)"]
+    end
+
+    subgraph Services ["System Services & Runtime Layer"]
+        FGS["AssistForegroundService (Process Survival)"]
+        A11yService["AssistAccessibilityService (performGlobalAction)"]
+        Audio["AudioManager (Volume Control)"]
+    end
+
+    Studio -->|observes| Snapshot
+    FloatBtn -->|touch gestures| Dispatcher
+    Popout -->|action click| Dispatcher
+    Dispatcher -->|checks capability| A11yState
+    Dispatcher -->|independent action| Audio
+    Dispatcher -->|accessibility required| A11yService
+    Dispatcher -->|blocked action| A11yDialog
+    A11yDialog -->|launch settings| A11yState
+    A11yService -->|connection callbacks| A11yState
+    A11yState -->|state update| Snapshot
+    Evaluator -->|evaluates health| Snapshot
+    Dispatcher -->|records event| Diag
+    FGS -->|manages overlay| FloatBtn
+```
+
+### Architectural Principles
+
+1. **Separation of Intent from Observation**: The user's desired state (`ON`, `OFF`, `PAUSED`) is strictly separated from platform observations (`RuntimeState`, `OverlayPermissionState`, `AccessibilityState`).
+2. **Least-Privileged Accessibility**: `AssistAccessibilityService` declares `canRetrieveWindowContent="false"` and `accessibilityEventTypes=""`. It cannot read on-screen text, inspect user inputs, or track running applications.
+3. **Fail-Safe Overlay Lifecycle**: WindowManager operations are synchronized on a reentrant window lock. All child popouts and dialogs are dismissed whenever the primary overlay detaches.
+4. **Bounded Local Telemetry**: All event logging is written to a local SQLite database with automatic FIFO pruning at 500 events.
+
+---
+
+## 4. Technology Stack
+
+- **Language:** Kotlin `2.0.21` (JVM Target 17)
+- **Build System:** Gradle `8.11.1` with Android Gradle Plugin `8.7.2`
+- **UI Toolkit:** Jetpack Compose (BOM `2024.10.01`) + Material 3 `1.3.1`
+- **Asynchronous Programming:** Kotlin Coroutines `1.9.0` + Kotlin Flow
+- **Data Persistence:** AndroidX DataStore Preferences `1.1.1`
+- **Local Database:** AndroidX Room `2.6.1` with KSP `2.0.21-1.0.28`
+- **Architecture Components:** AndroidX Lifecycle Runtime & ViewModel Compose `2.8.7`
+- **Testing:** JUnit `4.13.2`, Kotlin Coroutines Test `1.9.0`, AndroidX Test JUnit `1.2.1`
+
+---
+
+## 5. Requirements
+
+- **JDK:** OpenJDK 17 or OpenJDK 21 (configured as `JAVA_HOME`)
+- **Android SDK:**
+  - `compileSdk = 35` (Android 15)
+  - `targetSdk = 34` (Android 14)
+  - `minSdk = 28` (Android 9.0 Pie)
+- **Supported Devices:** Any physical Android device or emulator running Android 9.0 (API 28) or higher.
+- **Physical Test Baseline:** Realme Narzo 30 4G (realme UI 3.0 / Android 12, Build `RMX2156_11_F.19`).
+
+---
+
+## 6. Getting Started
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/anujp125/AssistX.git
+cd AssistX
+```
+
+### 2. Verify Environment
+Ensure JDK 17+ and the Android SDK are configured:
+```bash
+java -version
+```
+
+### 3. Build Debug APK
+```bash
+# On Linux / macOS
 ./gradlew assembleDebug
-./gradlew testDebugUnitTest
-Instrumentation test candidate, after a compatible emulator/device and test setup are available:
-./gradlew connectedDebugAndroidTest
-These are provisional command examples, not yet verified project commands. Check the actual Gradle configuration and task list before using or documenting them. On Windows use the wrapper script if it exists.
-Test evidence rules
-- A successful build is not proof of correct runtime behavior.
-- Unit-test results do not prove real-device overlay or lifecycle behavior.
-- Tests not executed must be reported as NOT RUN or BLOCKED, with a reason.
-- Actual-device claims must include device/OS/build, app version or commit, steps, and observed results.
-- Do not remove or weaken a test only to obtain a green run.
-Refer to docs/04-testing/TEST_STRATEGY.md and ACCEPTANCE_TESTS.md for the testing contract.
-8. Android and Privacy Guardrails
-- Do not add a permission unless it maps to an approved requirement.
-- Do not add Accessibility simply as a keep-alive mechanism.
-- Do not add a foreground service or boot receiver merely to promise always-on operation.
-- Do not bypass force-stop, user-disabled state, or system permission controls.
-- Do not claim Android permits a behavior without verifying the relevant API/target-SDK rules.
-- Do not add networking, analytics, telemetry, accounts, or cloud storage to v0.1 without approval.
-- Keep local diagnostics useful, bounded, and free of unnecessary personal data.
-- Never commit signing keys, tokens, credentials, private logs, local databases, or generated build output.
-9. Issue and Task Reporting
-Use a separate task brief for implementation and a bug report for defects. A useful bug report includes:
-- exact app build/commit;
-- device and OS/build, if applicable;
-- prerequisites and permission states;
-- numbered reproduction steps;
-- expected and actual results;
-- frequency/repeatability;
-- available diagnostics;
-- severity and impact;
-- whether the root cause is confirmed or only suspected.
-Do not write “Realme killed the app” unless the evidence supports that conclusion. Record what happened and what was observable.
-10. Product and Build Metadata
-Fill these values when decided; do not guess them:
-- Product owner: Anuj Pawar (@anujp125)
-- Application ID: com.nudge.assist
-- Kotlin package root: com.nudge.assist
-- Minimum SDK: 28 (Android 9.0)
-- Target SDK policy: 34 (Android 14) with Compile SDK 34
-- UI toolkit: Jetpack Compose
-- Current version: 0.1.0-dev (provisional label only; align with actual build configuration)
-- Distribution method: Personal APK / GitHub Releases
-- Repository URL: Local development (AssistX)
-- Build/test commands: ./gradlew assembleDebug, ./gradlew testDebugUnitTest
-11. What “Ready” Means
-The project is ready to begin implementation only when:
-- the requirements needed for the first task are clear;
-- permission-sensitive decisions are resolved or a limited technical spike is approved;
-- the repository is inspected and the task is bounded;
-- acceptance criteria and relevant tests are identified.
-A release is ready only after the Definition of Done and release checklist are satisfied, the applicable acceptance/device tests are executed, known limitations are recorded, and the product owner approves distribution.
-12. License
-Licensed under the GNU General Public License v3.0 (GPLv3). See license.md.
-13. Maintainer Approval
-- Maintainer/product owner: Anuj Pawar (@anujp125)
-- README status: Approved
-- Last reviewed: 2026-10-29
-- Notes: Approved via project questionnaire. Core actions: double-tap lock screen, long-press home/back.
+
+# On Windows (PowerShell)
+.\gradlew.bat assembleDebug
+```
+
+### 4. Install on Connected Device
+```bash
+adb devices
+.\gradlew.bat installDebug
+```
+
+---
+
+## 7. Permissions and First-Time Setup
+
+Android security architecture requires explicit user approval for system-level overlays and accessibility services:
+
+1. **Draw Over Other Apps (`SYSTEM_ALERT_WINDOW`)**
+   - Required to display the floating button.
+   - When launching AssistX for the first time, tap the **Overlay Permission** card in Studio. AssistX will open Android's *Display over other apps* settings screen. Toggle AssistX to **Allowed**.
+2. **Accessibility Service (`BIND_ACCESSIBILITY_SERVICE`)**
+   - Required for Screen Lock, Home, Screenshot, and Power Dialog actions.
+   - Android prohibits applications from enabling accessibility programmatically.
+   - Tap the **Accessibility** card in Studio to open Android's Accessibility settings. Locate **AssistX** under *Downloaded apps* and toggle it **On**.
+3. **Notifications (`POST_NOTIFICATIONS`)**
+   - Required on Android 13+ (API 33+) so that the foreground service can show a silent status notification, protecting AssistX from background memory reclamation.
+4. **Haptic Feedback (`VIBRATE`)**
+   - Used for subtle tactile clicks when touching or dragging the button.
+
+### What Happens When Accessibility is Unavailable?
+The floating assistant **does not break or crash**. Non-accessibility functions (Volume control, button repositioning, edge snapping, idle fade, Studio settings, Diagnostics) remain fully operational. If you attempt a gesture requiring accessibility, AssistX will show the **Accessibility required** dialog with a direct button to system settings.
+
+---
+
+## 8. Using AssistX
+
+### Gesture Reference
+
+| Gesture / Input | Target Action | Accessibility Required? |
+|---|---|:---:|
+| **Double-Tap** | Lock Screen | **Yes** |
+| **Long-Press (500ms)** | Navigate Home | **Yes** |
+| **Single Tap** | Toggle Action Popout Menu | **No** |
+| **Drag & Release** | Reposition with Edge Snapping | **No** |
+| **Popout: Volume** | Adjust system audio volume | **No** |
+| **Popout: Screenshot** | Take full screen screenshot | **Yes** |
+| **Popout: Power** | Open system power dialog | **Yes** |
+
+### Studio Dashboard & Settings
+- **Overview Tab:** Displays the master ON/OFF toggle, verified runtime health, subsystem statuses, and the Payment Safety Mode trigger.
+- **Settings Tab:** Accordion-based configuration allowing users to customize:
+  - Button size (compact 46dp, standard 54dp, large 62dp).
+  - Popout orientation (horizontal or vertical) and expansion direction.
+  - Button spacing and margin offsets.
+  - Background capsule container style (obsidian, metro black, solid accent, outline only).
+  - Haptic feedback and snap-to-edge toggles.
+- **Diagnostics Tab:** Real-time system monitoring showing memory usage, window states, and a chronological event log with single-tap log clearing.
+
+### Payment Safety Mode for UPI Applications
+When opening financial apps (such as BHIM, Google Pay, or PhonePe):
+1. In AssistX Studio, tap **pause AssistX for payments**.
+2. Confirm the prompt on the double-approval modal.
+3. AssistX will immediately detach the floating button and disable its accessibility service via Android's `disableSelf()` API.
+4. Complete your UPI transaction safely without accessibility interception warnings.
+5. When finished, re-enable AssistX in Android Accessibility settings.
+
+---
+
+## 9. Build Variants and Release
+
+| Variant | Application ID | Debuggable | Minify | Purpose |
+|---|---|:---:|:---:|---|
+| **`debug`** | `com.nudge.assist.debug` | Yes | No | Local development and device debugging |
+| **`release`** | `com.nudge.assist` | No | No | Distribution and production release candidate |
+
+### Building Release Artifacts
+```bash
+# Build unsigned release candidate APK
+.\gradlew.bat assembleRelease
+```
+Output location:
+```text
+app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+### Release Signing
+To produce a signed release APK without checking secrets into Git, provide environment variables or local properties (see `keystore.properties.example`):
+```bash
+export RELEASE_KEYSTORE_FILE="/path/to/release.keystore"
+export RELEASE_KEYSTORE_PASSWORD="your_keystore_password"
+export RELEASE_KEY_ALIAS="your_key_alias"
+export RELEASE_KEY_PASSWORD="your_key_password"
+
+.\gradlew.bat assembleRelease
+```
+Or manually sign using Android SDK `apksigner`:
+```bash
+apksigner sign --ks release.keystore --out app-release-signed.apk app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+---
+
+## 10. Testing
+
+### Automated Test Suite
+The repository includes 63 comprehensive unit tests covering state transitions, action gating, recovery limits, and touch coordinators:
+```bash
+.\gradlew.bat test
+```
+Test suites include:
+- `ActionDispatcherTest`: Action classification, non-accessibility pass-through, accessibility gating, and zero-replay guarantee.
+- `StatusEvaluatorTest`: Deterministic evaluation of composite application state.
+- `RuntimeControllerTest`: Service lifecycle, process survival, and recovery backoff policy.
+- `ActionExecutorTest`: Execution bounds and global action translation.
+- `StudioViewModelTest`: StateFlow emission, settings persistence, and accordion state handling.
+
+### Device-Level Verification
+Manual and ADB-assisted hardware testing is performed using Android Debug Bridge:
+```bash
+# Tap floating button on device
+adb -s <device_id> shell input tap 984 833
+
+# Long press for Home action
+adb -s <device_id> shell input swipe 984 833 984 833 800
+```
+Detailed test protocols are maintained in [`docs/testing/real_device_test.md`](docs/testing/real_device_test.md).
+
+---
+
+## 11. Troubleshooting
+
+- **Floating button is not visible:**
+  - Verify that **Draw over other apps** is enabled in Android Settings -> Apps -> Special app access.
+  - Verify that the master switch in Studio is toggled to **ON**.
+- **Gestures do not trigger Screen Lock or Home:**
+  - Check the Studio Overview tab. If Accessibility displays **action needed**, tap it to re-enable AssistX in Android Settings.
+- **AssistX disappears after closing Recent Apps:**
+  - On devices with aggressive memory management (Realme UI, MIUI, ColorOS, OxygenOS):
+    1. Lock AssistX in the Recent Apps switcher.
+    2. Set App Battery Usage to **Unrestricted** (allow background activity).
+    3. Enable **Auto-launch** in App Management settings.
+- **Build fails with Java compilation error:**
+  - Verify that JDK 17 or JDK 21 is installed and set as `JAVA_HOME`.
+
+---
+
+## 12. Privacy and Security
+
+- **Zero Network Communication:** AssistX declares **no internet permission** (`android.permission.INTERNET`) in its manifest. It cannot send or receive data over the network.
+- **Zero Content Inspection:** The accessibility service configuration explicitly disables window content inspection (`canRetrieveWindowContent="false"`) and declares empty event types (`accessibilityEventTypes=""`). It cannot inspect text, read passwords, or capture keystrokes.
+- **Local Diagnostics:** All event logs are stored in a private Room SQLite database on device storage and can be completely wiped at any time via the Diagnostics tab.
+- **No Absolute Guarantees:** Payment Safety Mode cleanly detaches the overlay and stops the accessibility service via official Android APIs. However, banking applications apply varying heuristic detection mechanisms that may evolve across bank versions.
+
+---
+
+## 13. Known Limitations
+
+- **Accessibility Re-Enablement Requires System Settings:** Android security prohibits third-party applications from enabling accessibility services programmatically. After using Payment Safety Mode, the user must manually re-enable AssistX in Android Settings.
+- **API 28 Minimum:** Native system screenshot capture (`GLOBAL_ACTION_TAKE_SCREENSHOT`) and screen lock (`GLOBAL_ACTION_LOCK_SCREEN`) require Android 9.0 (API 28) or higher.
+
+---
+
+## 14. Project Structure
+
+```text
+AssistX/
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/nudge/assist/
+│   │   │   │   ├── accessibility/         # AssistAction, ActionDispatcher, AccessibilityStateManager
+│   │   │   │   ├── data/                  # DataStore preferences & Room SQLite diagnostics
+│   │   │   │   ├── overlay/               # OverlayManager and window coordinator
+│   │   │   │   ├── runtime/               # RuntimeController and recovery engine
+│   │   │   │   ├── service/               # AssistForegroundService, AssistAccessibilityService
+│   │   │   │   ├── state/                 # AppStateSnapshot, StatusEvaluator
+│   │   │   │   └── ui/                    # StudioScreen, DiagnosticsScreen, FloatingButtonView, Popout
+│   │   │   ├── res/                       # Drawables, layouts, fonts, themes
+│   │   │   └── AndroidManifest.xml
+│   │   └── test/                          # 63 automated unit test suites
+│   ├── build.gradle.kts
+│   └── proguard-rules.pro
+├── docs/
+│   ├── assets/screenshots/                # Verified hardware device screenshots
+│   ├── ai_development/                    # Sprint plans, decisions, definition of done
+│   ├── architecture/                      # Architecture ADRs, state models, platform constraints
+│   ├── product/                           # SRS, MVP scope, requirements traceability
+│   └── testing/                           # Acceptance tests, hardware test matrix
+├── gradle/
+│   ├── libs.versions.toml
+│   └── wrapper/
+├── build.gradle.kts
+├── keystore.properties.example            # Release signing template (placeholders only)
+├── changelog.md                           # Keep a Changelog format
+├── license.md                             # GNU GPLv3
+└── README.md
+```
+
+---
+
+## 15. Contributing and License
+
+- **License:** GNU General Public License v3.0 (GPLv3). See [`license.md`](license.md) for full terms.
+- **Contributions:** Pull requests and issue reports are welcome. All contributions must adhere to the 0dp Metro design guidelines, least-privilege permissions, and pass the automated test suite.

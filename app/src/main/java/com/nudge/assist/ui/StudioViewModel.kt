@@ -14,6 +14,8 @@ import com.nudge.assist.state.AppStateSnapshot
 import com.nudge.assist.state.DesiredState
 import com.nudge.assist.state.StateCoordinator
 import com.nudge.assist.state.UserFacingStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -68,6 +70,24 @@ class StudioViewModel(
         }
     }
 
+    fun onPauseForPayments() {
+        diagnosticRecorder.recordEvent(
+            eventType = "PAUSE_FOR_PAYMENTS_TRIGGERED",
+            component = "STUDIO",
+            details = "User triggered explicit payment pause"
+        )
+        runtimeController.pauseForPayments()
+    }
+
+    fun onResumeFromPayments() {
+        diagnosticRecorder.recordEvent(
+            eventType = "RESUME_FROM_PAYMENTS_TRIGGERED",
+            component = "STUDIO",
+            details = "User requested resume from payment pause"
+        )
+        runtimeController.startAssistant()
+    }
+
     fun openOverlaySettings(context: Context) {
         diagnosticRecorder.recordEvent(
             eventType = "NAVIGATE_OVERLAY_SETTINGS",
@@ -116,8 +136,12 @@ class StudioViewModel(
         }
     }
 
+    private var opacityDebounceJob: Job? = null
+
     fun updateIdleOpacity(opacityPercent: Int) {
-        viewModelScope.launch {
+        opacityDebounceJob?.cancel()
+        opacityDebounceJob = viewModelScope.launch {
+            delay(150L)
             userPreferences.setIdleOpacityPercent(opacityPercent)
         }
     }
@@ -143,6 +167,87 @@ class StudioViewModel(
     fun updateSnapToEdge(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setSnapToEdgeEnabled(enabled)
+        }
+    }
+
+    fun updateAccent(hex: String) {
+        viewModelScope.launch {
+            userPreferences.setAccentHex(hex)
+        }
+    }
+
+    fun updateThemeMode(mode: String) {
+        viewModelScope.launch {
+            userPreferences.setThemeMode(mode)
+        }
+    }
+
+    // Floating Button Customization
+    fun updateButtonShape(shape: String) {
+        viewModelScope.launch {
+            userPreferences.setButtonShape(shape)
+        }
+    }
+
+    fun updateButtonStyle(style: String) {
+        viewModelScope.launch {
+            userPreferences.setButtonStyle(style)
+        }
+    }
+
+    fun updateButtonColorMode(colorMode: String) {
+        viewModelScope.launch {
+            userPreferences.setButtonColorMode(colorMode)
+        }
+    }
+
+    // Popout Array Settings
+    fun updatePopoutButtonSize(sizeDp: Int) {
+        viewModelScope.launch {
+            userPreferences.setPopoutButtonSizeDp(sizeDp)
+        }
+    }
+
+    fun updatePopoutOrientation(orientation: String) {
+        viewModelScope.launch {
+            userPreferences.setPopoutOrientation(orientation)
+        }
+    }
+
+    fun updatePopoutItemSpacing(spacingDp: Int) {
+        viewModelScope.launch {
+            userPreferences.setPopoutItemSpacingDp(spacingDp)
+        }
+    }
+
+    fun updatePopoutMargin(marginDp: Int) {
+        viewModelScope.launch {
+            userPreferences.setPopoutMarginDp(marginDp)
+        }
+    }
+
+    fun updatePopoutOrder(order: String) {
+        viewModelScope.launch {
+            userPreferences.setPopoutOrder(order)
+        }
+    }
+
+    // Background Capsule Element
+    fun updateCapsuleEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setCapsuleEnabled(enabled)
+        }
+    }
+
+    fun updateCapsuleStyle(style: String) {
+        viewModelScope.launch {
+            userPreferences.setCapsuleStyle(style)
+        }
+    }
+
+    fun updateCapsuleCornerRadius(radius: String) {
+        viewModelScope.launch {
+            userPreferences.setCapsuleCornerRadius(radius)
         }
     }
 
