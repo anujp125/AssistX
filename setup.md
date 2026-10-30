@@ -1,5 +1,5 @@
-AssistX — Setup and Developer Guide
-Document ID: NUDGE-DEV-001
+﻿AssistX — Setup and Developer Guide
+Document ID: ASSISTX-DEV-001
 Version: 0.1
 Status: Approved — Project Setup Guide
 Last updated: 2026-10-29

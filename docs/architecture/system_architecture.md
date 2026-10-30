@@ -1,5 +1,5 @@
-AssistX — System Architecture
-Document ID: NUDGE-ARCH-001
+﻿AssistX — System Architecture
+Document ID: ASSISTX-ARCH-001
 Version: 0.1
 Status: Draft — owner review required
 Last updated: 2026-10-29
@@ -43,7 +43,7 @@ Add a separate Gradle module, framework, or abstraction only when a concrete req
 4. System Context
 AssistX runs on the Android device. Its external dependencies are Android system capabilities and user actions in system settings.
 +-----------------------------------------------------------+
-|                       NUDGE APP                           |
+|                       ASSISTX APP                           |
 |                                                           |
 |  +------------------+       +---------------------------+ |
 |  | Studio UI        |       | Floating Assistant        | |
@@ -353,7 +353,7 @@ The following is a logical starting point, not a mandate for every directory to 
 app/
   src/
     main/
-      java/com/nudge/assist/
+      java/com/assistx/
         ui/
           studio/
           floating/

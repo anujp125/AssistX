@@ -1,4 +1,4 @@
-# AssistX
+﻿# AssistX
 
 > **Reliability-first, privacy-conscious native Android assistive touch assistant.**
 
@@ -345,7 +345,7 @@ AssistX/
 ├── app/
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/nudge/assist/
+│   │   │   ├── java/com/assistx/
 │   │   │   │   ├── accessibility/         # AssistAction, ActionDispatcher, AccessibilityStateManager
 │   │   │   │   ├── data/                  # DataStore preferences & Room SQLite diagnostics
 │   │   │   │   ├── overlay/               # OverlayManager and window coordinator

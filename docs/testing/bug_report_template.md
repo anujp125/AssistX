@@ -1,4 +1,4 @@
-# AssistX — Bug Report Template
+﻿# AssistX — Bug Report Template
 
 Use this template to log defects, unexpected runtime behavior, service termination, or performance regressions encountered during automated, emulator, or real-device testing.
 
@@ -68,7 +68,7 @@ Use this template to log defects, unexpected runtime behavior, service terminati
 
 ### B. Android Logcat Extract
 ```text
-[Paste relevant logcat lines filtered by app package com.nudge.assist or tag AssistX]
+[Paste relevant logcat lines filtered by app package com.assistx or tag AssistX]
 ```
 
 ### C. Screenshots / Screen Recordings
@@ -78,5 +78,5 @@ Use this template to log defects, unexpected runtime behavior, service terminati
 
 ## 8. Workaround & Next Actions
 - **Temporary Workaround**: (e.g., toggle master switch OFF and ON in Studio)
-- **Proposed Fix / Investigation Task**: (e.g., SPRINT task reference `NUDGE-025` or `CHG-002`)
+- **Proposed Fix / Investigation Task**: (e.g., SPRINT task reference `ASSISTX-025` or `CHG-002`)
 

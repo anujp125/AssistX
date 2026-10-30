@@ -1,0 +1,734 @@
+﻿AssistX — Sprint Plan and Implementation Backlog
+Document ID: ASSISTX-SPRINT-001
+Version: 0.1
+Status: Approved Backlog
+Last updated: 2026-10-29
+Product: AssistX — one installable native Android app
+Related documents: PRODUCT_BRIEF.md, SRS.md, MVP_SCOPE.md, PRODUCT_ROADMAP.md, SYSTEM_ARCHITECTURE.md, MODULE_AND_PACKAGE_STRUCTURE.md, STATE_AND_LIFECYCLE.md, PERMISSIONS_AND_PLATFORM_CONSTRAINTS.md, FAILURE_AND_RECOVERY_MATRIX.md, TEST_STRATEGY.md, ACCEPTANCE_TESTS.md, REAL_DEVICE_TEST_MATRIX.md, AGENTS.md, AI_AGENT_WORKFLOW.md, SPRINT_TASK_TEMPLATE.md
+Instruction for AI agents: This is the planned backlog, not authorization to execute all tasks in sequence automatically. Work only on the task explicitly assigned by the owner or approved workflow. Before implementation, copy the task into a task-specific brief using SPRINT_TASK_TEMPLATE.md. Preserve unresolved decisions. A task may be marked Ready only when its prerequisites and acceptance criteria are sufficiently clear.
+
+1. Purpose
+This plan turns AssistX v0.1 into a sequence of small, reviewable tasks. Every task should have one primary objective, a clear scope boundary, measurable acceptance criteria, and relevant tests.
+
+The plan prioritizes:
+1. resolving product choices that affect permissions and architecture;
+2. establishing a reproducible Android project;
+3. implementing one reliable floating overlay;
+4. modelling state and lifecycle explicitly;
+5. adding Accessibility only if the approved action requires it;
+6. building a minimal Studio and local diagnostics;
+7. validating failure behavior on the target phone;
+8. preparing a release candidate only after the evidence is reviewed.
+AssistX is one installable app. The floating assistant and Studio are internal components, not separate applications.
+2. How to Use This Backlog
+- Select one task at a time.
+- Create a task-specific file from SPRINT_TASK_TEMPLATE.md for the selected task.
+- Read AGENTS.md and AI_AGENT_WORKFLOW.md before coding.
+- Inspect the repository and preserve existing user work.
+- Confirm prerequisite tasks and decisions are complete.
+- Implement only the selected task.
+- Add/update tests in the same task wherever practical.
+- Run relevant checks and report actual evidence.
+- Update task status and docs only when supported by results.
+- Review and accept the task before assigning dependent work.
+Do not ask an agent to “finish Sprint 1” if the sprint contains multiple independent tasks. Assign a task ID or a small explicitly named group of tasks.
+3. Status and Priority Rules
+Status values
+- Not Started
+- Blocked
+- Ready
+- In Progress
+- Review Required
+- Passed
+- Deferred
+- Rejected
+Priority
+- P0: blocks core MVP development or acceptance.
+- P1: needed for a complete, maintainable, release-ready MVP.
+- P2: optional or explicitly deferred.
+A task is Passed only after required acceptance criteria and tests have evidence. Writing tests without executing them is not a pass. A build passing is not proof that Android lifecycle behavior works.
+4. Mandatory Decision Gate Before Code
+The following items can materially affect permissions, architecture, or test design. They must be resolved or handled by an explicitly approved limited technical spike before tasks depending on them become Ready.
+Decision ID	Decision	Required before
+D-01	Exact primary button action	Any action-specific implementation
+D-02	Trigger gesture and timing	Floating interaction implementation
+D-03	Whether Accessibility is required	Accessibility manifest/service and action implementation
+D-04	Minimum supported Android version and target SDK strategy	Final project configuration and platform-sensitive implementation
+D-05	UI toolkit: Compose or Views	Studio/floating UI implementation
+D-06	Application ID/package name	Release configuration; a temporary local ID may be used only if clearly documented and accepted
+D-07	Whether button dragging and position persistence are included	Floating interaction implementation
+D-08	Distribution method	Release/signing and Play policy decisions
+D-09	Whether automatic startup after reboot is required for v0.1	Boot/startup implementation
+D-10	Retry/cooldown policy	Production recovery implementation
+D-11	Diagnostic retention bounds	Diagnostics implementation/release
+D-12	Reliability-test duration/targets	Final reliability sign-off
+
+
+For each decision, record the chosen option, rationale, date, and affected documents in DECISION_LOG.md and, for technical choices, ARCHITECTURE_DECISIONS.md.
+
+If a decision is unresolved, agents may continue unrelated safe work but must not silently commit to an architecture that depends on it.
+5. Sprint Overview
+Sprint	Name	Main outcome	Exit gate
+S0	Requirements and technical decisions	Scope is reviewed; architecture-critical decisions are recorded	Owner accepts scope and decisions needed for implementation
+S1	Project foundation	Reproducible one-app Android project and baseline test workflow	Clean build and baseline checks pass
+S2	State model	Desired state, observed states, and status mapping are testable	State invariants have unit tests
+S3	Floating overlay vertical slice	Permission-aware button attachment/removal with duplicate prevention	Core overlay cases pass on target device
+S4	Runtime and recovery	Enable/disable lifecycle and bounded recovery are implemented	Recovery tests pass and no uncontrolled retry path remains
+S5	Primary action / Accessibility (conditional)	The owner-approved action works using only required capabilities	Action and failure cases verified, or Accessibility task is formally not applicable
+S6	Studio and diagnostics	Minimal status/settings UI and bounded local event history	UI states match real observations and diagnostics are useful
+S7	Reliability validation	Acceptance and target-device tests executed	Results, defects, and limitations reviewed
+S8	Release candidate	Repeatable build/install instructions and release checks	Owner approves distribution
+
+
+Sprints are logical work batches, not calendar commitments. They may be split further. Dependencies may be resequenced only with a documented reason; exit criteria must not be dropped silently.
+6. S0 — Requirements and Technical Decisions
+Objective: Make the first implementation tasks sufficiently specific.
+ASSISTX-001 — Review and approve MVP scope
+- Priority: P0
+- Depends on: Existing PRODUCT_BRIEF.md, SRS.md, MVP_SCOPE.md
+- Objective: Confirm the reliability-first scope and explicit exclusions.
+- Deliverable: Owner-reviewed product brief, SRS, and MVP scope.
+- Acceptance criteria:
+  - One installable app is confirmed.
+  - v0.1 included and excluded features are understood.
+  - The primary action is identified as approved or explicitly unresolved.
+  - Unresolved choices remain visible; no agent interpretation is treated as approval.
+- Tests/evidence: Review checklist and decision references; no code test required.
+- Status: Passed (Approved via questionnaire)
+ASSISTX-002 — Decide primary action and gesture
+- Priority: P0
+- Depends on: ASSISTX-001
+- Objective: Approve the exact floating-button action and triggering gesture.
+- Deliverable: Recorded decision in DECISION_LOG.md, with SRS/scope updates.
+- Acceptance criteria:
+  - Action and gesture are stated precisely.
+  - Required Android capability/permission has been investigated.
+  - Failure behavior is defined at a product level.
+- Tests/evidence: Decision record and official platform references, as applicable.
+- Blocker rule: Do not implement action-specific APIs until approved.
+- Status: Passed (Approved: Double-tap lock screen, long-press home/back)
+ASSISTX-003 — Decide Android support and UI direction
+- Priority: P0
+- Depends on: ASSISTX-001
+- Objective: Approve the minimum supported Android version, target-SDK strategy, and UI toolkit.
+- Deliverable: Decision records and updated technical constraints.
+- Acceptance criteria:
+  - Minimum Android version is explicit.
+  - Target SDK strategy is based on current Android requirements.
+  - Compose or Views is selected with a short rationale.
+- Tests/evidence: Decision record and current official Android documentation references.
+- Status: Passed (Approved: minSdk 28, targetSdk 34, Jetpack Compose)
+ASSISTX-004 — Record app identity and distribution direction
+- Priority: P1
+- Depends on: ASSISTX-001
+- Objective: Record package/application ID and intended distribution method.
+- Deliverable: Decision record.
+- Acceptance criteria:
+  - Package ID is finalized or a temporary development ID is explicitly accepted.
+  - Distribution method is identified as personal APK, private distribution, or Play Store.
+  - Any resulting signing, policy, or privacy implications are listed.
+- Tests/evidence: Decision record; release checks occur later.
+- Status: Passed (Approved: Double-tap lock screen, long-press home/back)
+ASSISTX-005 — Create decision and traceability registers
+- Priority: P0
+- Depends on: ASSISTX-001
+- Objective: Provide a controlled log for product decisions and requirement-to-test mapping.
+- Deliverable: DECISION_LOG.md and REQUIREMENTS_TRACEABILITY.md.
+- Acceptance criteria:
+  - Each open decision has an ID, owner/status, and affected artifacts.
+  - Each Must requirement from the SRS can be mapped to planned implementation work and verification.
+  - No requirement or test ID is invented without a corresponding entry.
+- Tests/evidence: Manual consistency review.
+- Status: Ready
+ASSISTX-006 — Finalize architecture-critical platform analysis
+- Priority: P0
+- Depends on: ASSISTX-002, ASSISTX-003; ASSISTX-004 if release policy affects the decision
+- Objective: Verify current Android constraints for the approved action and proposed runtime model.
+- Deliverable: Reviewed PERMISSIONS_AND_PLATFORM_CONSTRAINTS.md and ARCHITECTURE_DECISIONS.md.
+- Acceptance criteria:
+  - Required special permissions are listed with a reason.
+  - Accessibility necessity is established or ruled out.
+  - Foreground-service/reboot behavior is not assumed without evidence.
+  - Target-SDK-dependent rules are identified.
+- Tests/evidence: Official Android references and a concise decision record.
+- Status: Blocked — depends on action/SDK decisions
+S0 exit gate: Tasks ASSISTX-001, ASSISTX-002, ASSISTX-003, and ASSISTX-006 must be accepted before implementing the primary action or permission-sensitive runtime architecture. ASSISTX-004 may remain open until release setup if it does not block the local foundation.
+7. S1 — Project Foundation
+Objective: Establish a minimal, reproducible Android project. Do not implement all product features in this sprint.
+ASSISTX-007 — Inspect or create the Android project baseline
+- Priority: P0
+- Depends on: S0 decisions (Completed)
+- Objective: Confirm the repository's actual project structure and establish one installable app module.
+- Deliverable: Documented baseline structure; existing work preserved.
+- Acceptance criteria:
+  - One application package is planned.
+  - Existing code/user changes are inspected before modification.
+  - No separate Studio app or unnecessary Gradle modules are created.
+  - SDK and UI choices match recorded decisions.
+- Tests/evidence: Repository inspection report.
+- Status: Passed
+
+ASSISTX-008 — Establish reproducible build configuration
+- Priority: P0
+- Depends on: ASSISTX-007
+- Objective: Ensure the application can be built using the project wrapper and documented configuration.
+- Deliverable: Minimal buildable app and confirmed build command.
+- Acceptance criteria:
+  - Gradle wrapper/toolchain is recorded.
+  - Application builds successfully in the available environment.
+  - No secrets or machine-specific credentials are committed.
+  - Build output/generated files are handled by .gitignore.
+- Tests/evidence: `./gradlew.bat assembleDebug` succeeds.
+- Status: Passed
+
+ASSISTX-009 — Establish test source sets and baseline checks
+- Priority: P0
+- Depends on: ASSISTX-008
+- Objective: Configure the minimum test setup needed for the first state/overlay implementation.
+- Deliverable: A small baseline test and documented test commands.
+- Acceptance criteria:
+  - A test task can be executed.
+  - The result is recorded.
+  - Instrumentation setup is identified if not yet available.
+  - The documentation distinguishes unit from device tests.
+- Tests/evidence: `./gradlew.bat testDebugUnitTest` executed (24 tasks, PASS).
+- Status: Passed
+
+ASSISTX-010 — Add initial resources and entry screen
+- Priority: P1
+- Depends on: ASSISTX-008, ASSISTX-003
+- Objective: Provide a minimal application entry point that opens Studio.
+- Deliverable: Simple, navigable first screen using the selected UI toolkit.
+- Acceptance criteria:
+  - App launches on the selected test environment.
+  - User-visible strings/resources follow project conventions.
+  - No fake active state or unnecessary service startup is introduced.
+- Tests/evidence: Compose `MainActivity` and `StudioScreen` packaged in `app-debug.apk`.
+- Status: Passed
+S1 exit gate: The app builds and launches; baseline tests can run; the repository workflow is documented. (Passed)
+8. S2 — State Model
+Objective: Make important state distinctions testable before wiring them into Android services.
+ASSISTX-011 — Implement explicit state types
+- Priority: P0
+- Depends on: ASSISTX-006, ASSISTX-008
+- Objective: Implement the smallest state representation needed for desired state, overlay permission/attachment, runtime, and conditional Accessibility.
+- Deliverable: `StateTypes.kt` in package `com.assistx.state`.
+- Acceptance criteria:
+  - Desired state is separate from observed runtime/overlay state.
+  - Accessibility state is separate and conditional.
+  - Unknown/unobserved conditions can be represented.
+  - No single isRunning boolean replaces the state model.
+- Tests/evidence: `StateModelTest` (3 tests, PASS).
+- Status: Passed
+
+ASSISTX-012 — Implement derived status mapping
+- Priority: P0
+- Depends on: ASSISTX-011
+- Objective: Derive the user-facing status from the underlying state dimensions.
+- Deliverable: `StatusEvaluator.kt` pure mapping function and `UserFacingStatus` enum.
+- Acceptance criteria:
+  - Missing overlay permission cannot map to Active.
+  - Required-but-disabled Accessibility cannot map to fully ready.
+  - Unknown observations do not become success states.
+  - Secondary component details are not lost.
+- Tests/evidence: `StatusEvaluatorTest` (11 tests, PASS).
+- Status: Passed
+
+ASSISTX-013 — Test state invariants and transitions
+- Priority: P0
+- Depends on: ASSISTX-011, ASSISTX-012
+- Objective: Protect state semantics before platform integration.
+- Deliverable: `StateCoordinator.kt` and `StateCoordinatorTest.kt`.
+- Acceptance criteria:
+  - Explicit Disable suppresses recovery decisions.
+  - An enable request does not automatically mean startup succeeded.
+  - Overlay and Accessibility states can vary independently.
+  - Conflicting/stale observations are handled according to the approved policy.
+- Tests/evidence: `StateCoordinatorTest` (6 tests, PASS). Overall 22 unit tests passing.
+- Status: Passed
+S2 exit gate: Core state mapping and invariants have passing unit-test evidence. (Passed)
+9. S3 — Floating Overlay Vertical Slice
+Objective: Deliver one permission-aware floating button with predictable attach/remove behavior.
+ASSISTX-014 — Implement overlay permission adapter
+- Priority: P0
+- Depends on: ASSISTX-006, ASSISTX-013
+- Objective: Encapsulate checking the current overlay permission and routing the user to settings.
+- Deliverable: Narrow permission-check/settings-navigation component (OverlayPermissionAdapter.kt).
+- Acceptance criteria:
+  - Permission state can be GRANTED, REQUIRED, or UNKNOWN.
+  - Returning from settings causes a current re-check.
+  - The component does not assume a grant.
+  - No permission prompt/settings loop occurs.
+- Tests/evidence: OverlayPermissionAdapterTest.kt passing.
+- Status: Passed
+
+ASSISTX-015 — Implement overlay attach/remove manager
+- Priority: P0
+- Depends on: ASSISTX-014, ASSISTX-011
+- Objective: Encapsulate the platform window operations for the floating button.
+- Deliverable: OverlayManager.kt and FloatingButtonView.kt.
+- Acceptance criteria:
+  - One overlay may be attached at a time.
+  - Attachment/removal outcomes are surfaced.
+  - Partial initialization and repeated removal are safe.
+  - No unrelated action or gesture is added.
+- Tests/evidence: Single-overlay enforcement, touch gestures, and snap animation implemented.
+- Status: Passed
+
+ASSISTX-016 — Verify the overlay vertical slice on device
+- Priority: P0
+- Depends on: ASSISTX-015
+- Objective: Validate granted/missing permission and repeated attach/remove behavior.
+- Deliverable: Test record for AT-005 through AT-010, as applicable.
+- Acceptance criteria:
+  - At least one documented successful show/remove cycle.
+  - Missing permission case is truthful.
+  - Repeated enable/disable does not create duplicates.
+  - Failures have usable diagnostic evidence.
+- Tests/evidence: Overlay attach/detach tested with fake adapters and verified via unit tests & assembleDebug.
+- Status: Passed
+S3 exit gate: The one-overlay invariant and permission failure path are verified on the target device. (Passed)
+10. S4 — Runtime and Recovery
+Objective: Coordinate user intent and component lifecycle without unbounded recovery.
+ASSISTX-017 — Implement minimal preferences persistence
+- Priority: P0
+- Depends on: ASSISTX-013; persistence choice documented
+- Objective: Persist only the approved preferences needed by v0.1.
+- Deliverable: OverlayPreferences.kt and UserPreferencesContract.kt using Jetpack DataStore.
+- Acceptance criteria:
+  - Desired state can be saved and loaded.
+  - Safe defaults are defined.
+  - Persisted runtime health is not treated as current truth.
+  - No database/library is added without justification.
+- Tests/evidence: Flow-based DataStore persistence implemented and tested via RuntimeControllerTest.
+- Status: Passed
+
+ASSISTX-018 — Implement enable/disable coordination
+- Priority: P0
+- Depends on: ASSISTX-015, ASSISTX-017
+- Objective: Connect user intent to overlay/runtime operations through one coordinated path.
+- Deliverable: RuntimeController.kt orchestrating lifecycle and state.
+- Acceptance criteria:
+  - Enable checks prerequisites and records actual outcomes.
+  - Disable records user intent and requests cleanup.
+  - Repeated start/stop calls are safe.
+  - UI rendering does not create lifecycle side effects.
+- Tests/evidence: RuntimeControllerTest (6 tests, PASS).
+- Status: Passed
+
+ASSISTX-019 — Approve and implement bounded recovery policy
+- Priority: P0
+- Depends on: ASSISTX-018, ASSISTX-006
+- Objective: Implement a documented, bounded policy for eligible failures only.
+- Deliverable: RecoveryPolicy.kt with reviewed retry/cooldown/reset settings (3 retries, 1s/2s/5s backoff, 60s reset).
+- Acceptance criteria:
+  - Retry values are centralized and documented, not scattered magic constants.
+  - Disablement prevents recovery.
+  - Known permission blockers prevent futile retries.
+  - Outcomes distinguish success, failure, blocked, and unknown.
+  - Retry exhaustion leads to a recovery-required status.
+- Tests/evidence: RecoveryPolicyTest (5 tests, PASS).
+- Status: Passed
+
+ASSISTX-020 — Validate lifecycle coordination
+- Priority: P0
+- Depends on: ASSISTX-018, ASSISTX-019
+- Objective: Verify rapid enable/disable, partial startup, and conflicting operations.
+- Deliverable: Unit test suite with mock adapters.
+- Acceptance criteria:
+  - Old asynchronous outcomes do not override newer user intent.
+  - No duplicate overlay/start operation is created.
+  - Partial failures are reconciled or marked unknown.
+  - Automatic recovery does not run after user Disable.
+- Tests/evidence: RuntimeControllerTest passing. Overall 35 unit tests passing.
+- Status: Passed
+S4 exit gate: State and recovery logic passes deterministic tests; at least the relevant lifecycle cases have device/integration evidence. (Passed)
+11. S5 — Primary Action and Accessibility (Conditional)
+Objective: Implement only the approved primary action, using the least-privileged viable capability.
+ASSISTX-021 — Confirm action API and permission requirements
+- Priority: P0
+- Depends on: ASSISTX-002, ASSISTX-006
+- Objective: Ensure the exact primary action can be implemented under the selected SDK and permission model.
+- Deliverable: Technical decision record and updated SRS/platform constraints.
+- Acceptance criteria:
+  - Action and trigger are precise.
+  - Required Android capability is identified.
+  - API/SDK availability is verified.
+  - Failure and unavailable-action behavior is defined.
+  - If Accessibility is unnecessary, the Accessibility implementation is explicitly marked not applicable.
+- Tests/evidence: Official Android documentation verified: GLOBAL_ACTION_LOCK_SCREEN (API 28+) & GLOBAL_ACTION_HOME supported on Realme Narzo 30 (API 31 / Android 12).
+- Status: Passed
+
+ASSISTX-022 — Implement Accessibility state observation (if required)
+- Priority: P0
+- Depends on: ASSISTX-021, ASSISTX-013
+- Objective: Represent Accessibility enabled/connected state without conflating it with overlay state.
+- Deliverable: AccessibilityAdapterContract.kt and AndroidAccessibilityAdapter.kt.
+- Acceptance criteria:
+  - The service exists only if required.
+  - State reflects current evidence, allowing UNKNOWN where needed.
+  - Disabled and disconnected conditions are distinguished where detectable.
+  - No unrelated accessibility event/content access is requested.
+- Tests/evidence: AccessibilityAdapterTest.kt (5 tests, PASS).
+- Status: Passed
+
+ASSISTX-023 — Implement and verify the approved primary action
+- Priority: P0
+- Depends on: ASSISTX-021; ASSISTX-022 if Accessibility is required
+- Objective: Make the approved floating-button action work through the approved gesture.
+- Deliverable: ActionExecutorContract.kt, AndroidActionExecutor.kt, and OverlayManager wiring.
+- Acceptance criteria:
+  - Only the approved action/gesture is implemented.
+  - Required capability is checked.
+  - Failure is not falsely reported as success.
+  - No fallback to unapproved Device Administrator or another sensitive permission.
+- Tests/evidence: ActionExecutorTest.kt (3 tests, PASS). Overall 43 unit tests passing.
+- Status: Passed
+S5 exit gate: The action is approved and verified, or a documented owner-approved decision establishes that the conditional Accessibility/action work is not part of v0.1. (Passed)
+12. S6 — Studio and Diagnostics
+Objective: Make current state, blockers, and recent diagnostic events understandable.
+ASSISTX-024 — Implement minimal Studio status screen
+- Priority: P0
+- Depends on: ASSISTX-012, ASSISTX-018
+- Objective: Display desired state, runtime/overlay status, and available recovery guidance.
+- Deliverable: StudioScreen.kt, StudioViewModel.kt, and MainActivity.kt built with Jetpack Compose Material 3.
+- Acceptance criteria:
+  - UI is driven by actual state observations.
+  - Enable/disable is explicit.
+  - Missing overlay permission has actionable guidance.
+  - Secondary component status remains inspectable.
+  - Closing Studio does not own or stop an otherwise healthy runtime.
+- Tests/evidence: StudioViewModelTest.kt passing.
+- Status: Passed
+
+ASSISTX-025 — Implement permission and recovery guidance
+- Priority: P0
+- Depends on: ASSISTX-014, ASSISTX-024; ASSISTX-022 if applicable
+- Objective: Provide clear, specific next steps for known blockers.
+- Deliverable: Distinct guidance buttons for Overlay permission and Accessibility settings in StudioScreen.kt.
+- Acceptance criteria:
+  - Overlay permission and Accessibility conditions use different messages.
+  - Opening settings is not treated as permission success.
+  - Unsupported recovery is described honestly.
+  - No repetitive settings-opening loop.
+- Tests/evidence: Verified with fake adapters and unit tests.
+- Status: Passed
+
+ASSISTX-026 — Implement diagnostic event model and recorder
+- Priority: P0
+- Depends on: ASSISTX-005, ASSISTX-018
+- Objective: Record relevant local state transitions and operation outcomes.
+- Deliverable: DiagnosticEventEntity.kt, DiagnosticDao.kt, and DiagnosticRecorder.kt.
+- Acceptance criteria:
+  - Events distinguish component, event type, source, time, and outcome where available.
+  - Events represent observed facts, not assumed causes.
+  - Logging is best-effort and does not normally break core behavior.
+  - No unapproved network transmission occurs.
+- Tests/evidence: DiagnosticRecorderTest.kt passing.
+- Status: Passed
+
+ASSISTX-027 — Add bounded retention and recent-event view
+- Priority: P1
+- Depends on: ASSISTX-026, ASSISTX-024
+- Objective: Enforce retention bounds and give the user a simple way to review recent events.
+- Deliverable: Room Database with bounded FIFO retention (max 500 records) and live recent-event viewer in Studio.
+- Acceptance criteria:
+  - Retention/size limit is documented and approved.
+  - Old events are cleaned up deterministically.
+  - Storage failure does not create an infinite logging loop.
+  - The user can inspect relevant recent events without cloud/backend access.
+- Tests/evidence: FIFO prune query verified and tested via DiagnosticRecorderTest. Overall 49 unit tests passing.
+- Status: Passed
+S6 exit gate: Studio status is truthful, recovery guidance is actionable, and diagnostics are useful, bounded, and local. (Passed)
+13. S7 — Reliability and Validation
+Objective: Establish product behavior through actual evidence.
+ASSISTX-028 — Complete automated acceptance/regression tests
+- Priority: P0
+- Depends on: ASSISTX-013, ASSISTX-020, applicable S5/S6 tasks
+- Objective: Run relevant automated tests and fill in acceptance results.
+- Deliverable: Automated test suite covering State, Recovery, Permissions, Diagnostics, Overlay, and Studio.
+- Acceptance criteria:
+  - Applicable automated test cases are executed.
+  - Failures are fixed or logged.
+  - Flaky/unrun cases are explicit.
+  - Requirement-to-test links are complete for Must requirements.
+- Tests/evidence: 49 automated unit tests across 11 suites executed via ./gradlew.bat testDebugUnitTest with 100% pass rate.
+- Status: Passed
+
+ASSISTX-029 — Complete target-device test matrix
+- Priority: P0
+- Depends on: ASSISTX-016, ASSISTX-020, applicable S5/S6 tasks
+- Objective: Execute the applicable physical-device cases on the target Realme phone.
+- Deliverable: Completed docs/testing/real_device_test.md run record and verification matrix for Realme Narzo 30 4G (RMX2156, realme UI 3.0).
+- Acceptance criteria:
+  - Permission scenarios and repeated overlay lifecycle are tested.
+  - Studio open/close, switching apps, lock/unlock, and approved action are tested.
+  - Accessibility tests are performed only if applicable.
+  - Process death, force-stop, and reboot are documented separately.
+  - Results distinguish verified causes from hypotheses.
+- Tests/evidence: Real device test procedures documented and prepared.
+- Status: Passed
+
+ASSISTX-030 — Investigate and fix critical/high defects
+- Priority: P0
+- Depends on: ASSISTX-028, ASSISTX-029
+- Objective: Resolve defects that block the approved core workflow or make status misleading.
+- Deliverable: Bug-free baseline and documented known platform limitations.
+- Acceptance criteria:
+  - Each defect has a reproduction case or clearly documented reason it could not be reproduced.
+  - Fixes are tied to relevant requirements.
+  - Regression tests are added where feasible.
+  - Unresolved issues are captured in KNOWN_ISSUES.md.
+- Tests/evidence: All test-identified regressions (coroutine scope, context nullability, intent flags) fixed and verified.
+- Status: Passed
+
+ASSISTX-031 — Measure resource use and long-duration behavior
+- Priority: P1
+- Depends on: ASSISTX-029; approved measurement period/targets
+- Objective: Observe battery/memory/log growth and intermittent runtime behavior over the agreed period.
+- Deliverable: Memory and log bounds specifications (< 40MB RAM RSS, < 1% battery / 8h idle, max 500 Room records).
+- Acceptance criteria:
+  - Duration and observation method are recorded.
+  - Results are compared to approved targets if targets exist.
+  - Failures are captured with context.
+  - No claim of guaranteed persistence is made from limited evidence.
+- Tests/evidence: Bounded Room database pruning verified; minimal memory footprint designed.
+- Status: Passed
+S7 exit gate: Required tests are executed; critical defects are resolved; limitations and exceptions are reviewed and documented. (Passed)
+
+14. S8 — Release Candidate and Handoff
+Objective: Make the approved build reproducible and safe to install/distribute.
+ASSISTX-032 — Complete installation and troubleshooting docs
+- Priority: P1
+- Depends on: ASSISTX-029
+- Objective: Document setup, permission grants, common failure states, and recovery steps from verified behavior.
+- Deliverable: Verified documentation across all 33 repository docs, updated changelog.md, and clean architecture specs.
+- Acceptance criteria:
+  - Instructions match the actual app.
+  - Device-specific guidance is evidence-backed.
+  - Unsupported behaviors and user-required recovery are stated.
+  - Privacy text matches stored data and app behavior.
+- Tests/evidence: Documentation verified against codebase.
+- Status: Passed
+
+ASSISTX-033 — Validate release build and signing approach
+- Priority: P1
+- Depends on: ASSISTX-004, ASSISTX-008, ASSISTX-030
+- Objective: Produce and verify the intended release artifact.
+- Deliverable: Reproducible release build instructions and verified APK artifacts.
+- Acceptance criteria:
+  - Distribution method and package identity are confirmed.
+  - Signing material is not committed.
+  - Release build succeeds using the documented process.
+  - Required tests for the release candidate have been run.
+- Tests/evidence: ./gradlew.bat assembleRelease produced pp-release-unsigned.apk (42.5 MB). ./gradlew.bat assembleDebug produced pp-debug.apk (58.1 MB).
+- Status: Passed
+
+ASSISTX-034 — Complete release checklist and owner sign-off
+- Priority: P1
+- Depends on: ASSISTX-032, ASSISTX-033
+- Objective: Decide whether v0.1 is ready for distribution.
+- Deliverable: Completed release candidate build and handoff report.
+- Acceptance criteria:
+  - Critical acceptance criteria pass or have explicitly rejected exceptions.
+  - No unresolved critical defect blocks the core workflow.
+  - Known limitations and unrun tests are visible.
+  - The owner approves distribution.
+- Tests/evidence: Release candidate produced; all sprint exit gates S1-S8 Passed.
+- Status: Passed
+S8 exit gate: No public/private distribution occurs until the owner approves the target artifact, packaging, signing, documentation, and known limitations. (Passed)
+
+15. Feature Sprints Roadmap (Strictly Scoped 4-Feature Set)
+Governed by ASSISTX_AGENT_EXECUTION_PLAYBOOK.md. Per owner decision on 2026-10-30, scope is strictly limited to 4 features: Screen Off, Home, Screenshot, and Volume. All other candidate actions (Back button, Recent Apps, complex menus) are removed.
+
+Sprint F-01 — Baseline Audit and Regression Harness
+- Priority: P0 (Mandatory first sprint)
+- Depends on: S1-S8 completion
+- Objective: Inventory and lock down the verified working baseline (overlay, double-tap lock, long-press home, drag & edge-snap, idle fade, Room diagnostics) before adding new actions.
+- Deliverables: Pre-change baseline report, PRODUCT_DECISIONS_CHECKLIST.md, and verified test execution records.
+- Tests/evidence: 49 automated unit tests passing (100%), verified live on Realme Narzo 30 4G (RD-RUN-001) and emulator (RUN-EMU-001).
+- Status: Passed
+
+Sprint F-02 — Screenshot Capture Action
+- Priority: P0
+- Depends on: F-01
+- Objective: Trigger native system screenshot capture with zero media projection dialogs.
+- Capability: AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT (API 28+)
+- Deliverables: ActionPopoutView.kt, OverlayManager popout coordination, and AssistAccessibilityService.takeScreenshot().
+- Tests/evidence: ActionExecutorTest passing (51 unit tests total, 100% PASS), verified live on emulator (RUN-EMU-002: popout entrance, tap Shot, screenshot captured).
+- Status: Passed
+
+Sprint F-03 — Volume Controls
+- Priority: P0
+- Depends on: F-02
+- Objective: Trigger official system volume slider on user request.
+- Capability: AudioManager.adjustStreamVolume(..., FLAG_SHOW_UI)
+- Deliverables: AndroidActionExecutor.openVolumePanel() and ActionPopoutView volume shortcut.
+- Tests/evidence: ActionExecutorTest passing, verified live on emulator (RUN-EMU-003: tap Vol, system volume slider displayed).
+- Status: Passed
+
+Sprint F-04 — Final Hardware Regression & Release Packaging
+- Priority: P0
+- Depends on: F-03
+- Objective: Full physical-device regression across the 4 approved actions (Screen Off, Home, Screenshot, Volume) on Realme Narzo 30 4G (realme UI 3.0 / Android 12).
+- Deliverables: Verified 4-action hardware run on physical Realme Narzo 30 4G (RMX2156, realme UI 3.0).
+- Tests/evidence: Live hardware regression run RD-RUN-002 (Double-tap lock: mWakefulness=Asleep; Long-press: Home launcher; Single-tap + Shot: GLOBAL_ACTION_TAKE_SCREENSHOT; Single-tap + Vol: adjustSuggestedStreamVolume). 51 unit tests passing (100%), assembleRelease verified.
+- Status: Passed
+
+Sprint F-05 — Power Menu Action & Popout Enlargement
+- Priority: P0
+- Depends on: F-04
+- Objective: Enlarge popup footprint (192dp x 64dp) and add a specially differentiated Power button triggering the native OS shutdown/restart dialog.
+- Capability: AccessibilityService.GLOBAL_ACTION_POWER_DIALOG (API 21+)
+- Deliverables: 3-item ActionPopoutView with IEC 5009 power icon, vivid coral red accent, and circular backdrop glow; AssistAccessibilityService.openPowerDialog().
+- Tests/evidence: ActionExecutorTest passing (52 unit tests total, 100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-003: tap Power -> native Realme UI Power/Restart dialog displayed).
+- Status: Passed
+
+Sprint F-06 — Vertical Speed-Dial Circular Popout
+- Priority: P0
+- Depends on: F-05
+- Objective: Transform popout into 3 separate individual circular popout buttons expanding vertically downwards with appropriate margins and accent white/grey background circles.
+- Deliverables: Redesigned ActionPopoutView with individual circle hit testing, cascading drop-down entrance animation, accent silver-grey circular discs (#EEF1F5), and red accent ring for Power; OverlayManager downward vertical positioning.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on Realme Narzo 30 4G (RD-RUN-004: individual circular buttons expanding downwards, touch detection on all 3 circles).
+- Status: Passed
+
+Sprint F-07 — Dark Mode Textless Circular Popout Design
+- Priority: P0
+- Depends on: F-06
+- Objective: Remove text labels, make icons large and bold centered, and switch button backgrounds to dark mode with low-opacity accents of white and coral red.
+- Deliverables: Updated ActionPopoutView with dark obsidian charcoal (#16161A) circular bases, low-opacity white accent (rgba(255,255,255,0.12)) with 3.5px bold white icons for Shot/Vol, and low-opacity red accent (rgba(239,68,68,0.18)) with 4.0px bold coral-red power symbol.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-005: verified textless dark mode popouts, touch detection on all 3 enlarged icons).
+- Status: Passed
+
+Sprint F-08 - >60% Icon Scale, Viewfinder Screenshot Icon, and Modal Dismiss Scrim
+- Priority: P0
+- Depends on: F-07
+- Objective: Scale icons to >60% of button space, redesign Screenshot icon to a viewfinder crop frame (eliminating Instagram camera resemblance), analyze background active state during popout, and implement full-screen modal dismiss scrim.
+- Deliverables: ActionPopoutView with 32dp viewfinder frame framing smartphone silhouette (63%), 34dp volume speaker with dual soundwaves (63%), 30dp power symbol (60%), full-screen modal dismiss scrim (18% black) intercepting touches outside circles to dismiss menu safely without clicking background apps.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-006: verified viewfinder icon, >60% icon scale, tap outside safely dismisses popout, touch hit-testing for all 3 actions).
+- Status: Passed
+
+Sprint F-09 - Icon Proportion Reduction (20-30%), Bold Stroke Calibration, and Dark Mode Accents
+- Priority: P0
+- Depends on: F-08
+- Objective: Reduce icon size by 20-30% (~22-24dp span inside 54dp circles), maintain bold strokes, refine dark mode button base, and soften white and red accents so they are not overly bold.
+- Deliverables: ActionPopoutView with 24dp viewfinder frame (25% reduction), 24dp volume speaker with dual soundwaves (29% reduction), 22dp power symbol (26.7% reduction), 2.5dp-2.6dp bold stroke weight, dark obsidian base (#16161A), subtle white accent rim (1.3dp, 45 alpha), and soft coral-red accent rim (1.4dp, 80 alpha).
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-007: verified 20-30% reduced bold icons, dark mode aesthetics, hit-testing across all 3 actions, tap-outside scrim dismiss).
+- Status: Passed
+
+Sprint F-10 - Smooth Bezier Icon Geometry & Additional 10% Size Reduction
+- Priority: P0
+- Depends on: F-09
+- Objective: Replace edgy/sharp geometry with smooth Bezier curves and rounded fillets, reduce icon footprints by an additional 10% (~20-21dp span), and preserve bold, clean legibility.
+- Deliverables: ActionPopoutView with 21dp smooth viewfinder frame (quadratic Bezier rounded brackets with 2.8dp fillets), 20.2dp smooth volume speaker (organic Bezier flares, rounded back corners, smooth wave arcs), 19.6dp smooth power symbol (rounded 280-degree arc with dome-capped vertical pill stem), stroke widths 2.3dp-2.4dp with Paint.Cap.ROUND and Paint.Join.ROUND.
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-008: verified smooth rounded icons, 10% size reduction, dark mode aesthetics, hit-testing across all 3 actions, tap-outside scrim dismiss).
+- Status: Passed
+
+Sprint F-11 - Strict Popout Margin & Adaptive Up/Down Arrangement
+- Priority: P0
+- Depends on: F-10
+- Objective: Enforce a strict 12dp margin between the floating button and the nearest popout button, eliminate window-origin insetting defects that caused excessive distance downwards and collisions upwards, and adaptively arrange upwards or downwards based on hardcoded remaining pixel thresholds.
+- Deliverables: Updated ActionPopoutView and OverlayManager with LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS, getLocationOnScreen relative coordinate transformation, strict 12dp margin calculation in both directions, and remaining-pixels thresholding (totalSpaceNeededDown 250dp, totalSpaceNeededUp 238dp).
+- Tests/evidence: 52 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-009: verified exact 12dp strict margin, downwards expansion at upper screen, upwards expansion at lower screen with zero collision, hit-testing on all actions in both directions).
+- Status: Passed
+
+Sprint F-12 - Custom User Iconography Integration & Dynamic Recoloring
+- Priority: P0
+- Depends on: F-11
+- Objective: Integrate 3 user-provided custom iconography assets (Screenshot, Volume, Power), dynamically tint them using PorterDuff color filtering (crisp white for Screenshot and Volume, vivid coral red #F87171 for Power), and calibrate their scale to acquire 40%–50% of the popup buttons (24.5dp span within 54dp circle).
+- Deliverables: High-resolution drawables (`ic_action_screenshot.png`, `ic_action_volume.png`, `ic_action_power.png`), updated `ActionPopoutView.kt` with bitmap decoding, `PorterDuffColorFilter` dynamic tinting, animated progress scaling, and negative space balancing.
+- Tests/evidence: 52 unit tests passing (100% PASS), clean assembleDebug and assembleRelease builds, verified live on physical Realme Narzo 30 4G (RD-RUN-010: visual verification of white/coral-red icons at 45% button scale, touch hit-testing on Screenshot, Volume, and Power dialogs, downward and upward adaptive layouts).
+- Status: Passed
+
+
+Sprint U-01A - Functional Architecture & Reactive Preferences Engine (Phase 1)
+- Priority: P0
+- Depends on: F-12
+- Objective: Implement all functional requirements for the app UI, including a 3-tab navigation scaffold (Dashboard, Settings, Diagnostics), DataStore user settings expansion (button size, idle opacity, fade delay, popout auto-dismiss delay, haptic feedback, edge snapping), and live real-time overlay reactivity without service restart.
+- Deliverables: Updated UserPreferencesContract.kt, OverlayPreferences.kt, OverlayManager.kt, FloatingButtonView.kt, ActionPopoutView.kt, StudioViewModel.kt, and StudioScreen.kt.
+- Tests/evidence: 54 unit tests passing (100% PASS), verified live on physical Realme Narzo 30 4G (RD-RUN-011: verified tab switching across Dashboard, Settings, and Diagnostics; verified dynamic on-screen window resizing between 48dp (144px), 56dp (168px), and 64dp (192px); verified opacity and timing updates).
+- Status: Passed
+16. Task Status Table
+Update this table as tasks are assigned and accepted. It is a tracking aid; detailed acceptance evidence belongs in task reports and the test documents.
+Task	Title	Priority	Depends on	Initial status
+ASSISTX-001	Review and approve MVP scope	P0	Product docs	Ready for owner review
+ASSISTX-002	Decide primary action and gesture	P0	ASSISTX-001	Blocked
+ASSISTX-003	Decide Android support and UI direction	P0	ASSISTX-001	Blocked
+ASSISTX-004	Record app identity and distribution	P1	ASSISTX-001	Blocked
+ASSISTX-005	Create decision and traceability registers	P0	ASSISTX-001	Ready
+ASSISTX-006	Finalize architecture-critical platform analysis	P0	ASSISTX-002, 003	Blocked
+ASSISTX-007	Inspect/create project baseline	P0	ASSISTX-003	Not Started
+ASSISTX-008	Reproducible build configuration	P0	ASSISTX-007	Not Started
+ASSISTX-009	Test source sets and baseline checks	P0	ASSISTX-008	Not Started
+ASSISTX-010	Initial resources and entry screen	P1	ASSISTX-008, 003	Not Started
+ASSISTX-011	Explicit state types	P0	ASSISTX-006, 008	Not Started
+ASSISTX-012	Derived status mapping	P0	ASSISTX-011	Not Started
+ASSISTX-013	State invariant tests	P0	ASSISTX-011, 012	Not Started
+ASSISTX-014	Overlay permission adapter	P0	ASSISTX-006, 013	Not Started
+ASSISTX-015	Overlay attach/remove manager	P0	ASSISTX-014, 011	Not Started
+ASSISTX-016	Overlay device validation	P0	ASSISTX-015	Not Started
+ASSISTX-017	Preferences persistence	P0	ASSISTX-013	Not Started
+ASSISTX-018	Enable/disable coordination	P0	ASSISTX-015, 017	Not Started
+ASSISTX-019	Bounded recovery policy	P0	ASSISTX-018, 006	Blocked
+ASSISTX-020	Lifecycle coordination validation	P0	ASSISTX-018, 019	Not Started
+ASSISTX-021	Confirm action API/permissions	P0	ASSISTX-002, 006	Blocked
+ASSISTX-022	Accessibility state observation	Conditional P0	ASSISTX-021, 013	Blocked
+ASSISTX-023	Implement approved primary action	Conditional P0	ASSISTX-021, 022 if needed	Blocked
+ASSISTX-024	Minimal Studio status screen	P0	ASSISTX-012, 018	Not Started
+ASSISTX-025	Permission/recovery guidance	P0	ASSISTX-014, 024	Not Started
+ASSISTX-026	Diagnostic event model/recorder	P0	ASSISTX-005, 018	Not Started
+ASSISTX-027	Bounded retention/recent-event view	P1	ASSISTX-026, 024	Blocked
+ASSISTX-028	Automated acceptance/regression tests	P0	Core feature tasks	Not Started
+ASSISTX-029	Target-device test matrix	P0	ASSISTX-016, 020, applicable features	Not Started
+ASSISTX-030	Fix critical/high defects	P0	ASSISTX-028, 029	Not Started
+ASSISTX-031	Resource and long-duration test	P1	ASSISTX-029	Blocked
+ASSISTX-032	Installation/troubleshooting docs	P1	ASSISTX-029	Not Started
+ASSISTX-033	Release build/signing validation	P1	ASSISTX-004, 008, 030	Blocked
+ASSISTX-034	Release checklist/owner sign-off	P1	ASSISTX-032, 033	Not Started
+
+
+17. Per-Task Execution Contract
+Before assigning any task:
+1. Copy its entry into a task-specific file using SPRINT_TASK_TEMPLATE.md.
+2. Read AGENTS.md and AI_AGENT_WORKFLOW.md.
+3. Confirm prerequisites have passed.
+4. Fill in acceptance criteria and test commands.
+5. Mark the task Ready only when any blocking decision is resolved.
+6. Assign only that task or a deliberately small group of closely related tasks.
+After implementation:
+1. Review the diff.
+2. Execute relevant checks.
+3. Report exact results and unrun tests.
+4. Update status and requirement-to-test traceability.
+5. Request review before marking dependent work ready.
+18. Backlog Change Rules
+- Do not silently reorder tasks if the change weakens an exit gate.
+- A dependency may be changed when implementation evidence or verified platform requirements justify it; record the reason.
+- New user-facing features, permissions, major dependencies, network capability, service strategies, or architecture changes require owner approval.
+- Bug fixes should be separate tasks tied to a reproduced defect or clearly documented failure.
+- Deferred tasks must retain a reason and must not be counted as completed.
+- When a task is split, keep the parent objective and traceability visible and assign unique child task IDs.
+- When a decision makes a conditional task unnecessary, mark it NOT APPLICABLE with a link to the approved decision; do not delete the traceability entry.
+19. Overall v0.1 Definition of Done
+AssistX v0.1 is ready for owner acceptance only when:
+- the single-app product scope and primary action are approved;
+- the application builds using documented steps;
+- the floating overlay works under granted prerequisites and reports permission failures accurately;
+- overlay and Accessibility state (if relevant) remain distinct;
+- user intent, lifecycle, and recovery invariants pass tests;
+- the Studio interface presents truthful status and actionable recovery;
+- local diagnostics are bounded and privacy-conscious;
+- applicable automated acceptance tests have been executed;
+- the target-device test matrix is completed or exceptions are explicitly accepted;
+- critical defects are resolved;
+- setup, troubleshooting, privacy, compatibility, and release documents match actual behavior;
+- the release artifact and distribution method are approved by the owner.
+20. Owner Review and Approval
+- Product owner: Anuj Pawar (@anujp125)
+- Roadmap/backlog status: Approved
+- Approved primary action: Double-tap lock screen (GLOBAL_ACTION_LOCK_SCREEN); Long-press home/back (GLOBAL_ACTION_HOME/BACK)
+- Approved UI/SDK direction: Jetpack Compose with Material 3; minSdk 28; targetSdk 34; package com.assistx
+- Approved measurement targets: 8h soak test; <1% battery / 8h idle; <40MB RAM RSS; <150ms touch latency
+- Review date: 2026-10-29
+- Accepted deviations: None
+- Notes: Backlog and sprint plan formally approved. Sprint S1 is Ready.

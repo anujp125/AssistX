@@ -2,8 +2,8 @@
 
 This repository follows strict, verified AI coding agent workflows.
 
-- **Central Agent Guidelines:** See [`docs/ai_development/agents.md`](docs/ai_development/agents.md)
-- **Approved Decision Register:** See [`docs/ai_development/decision_log.md`](docs/ai_development/decision_log.md) and [`PRODUCT_DECISIONS_CHECKLIST.md`](PRODUCT_DECISIONS_CHECKLIST.md)
+- **Central Agent Guidelines:** See [`docs/development/agents.md`](docs/development/agents.md)
+- **Approved Decision Register:** See [`docs/reference/decision_log.md`](docs/reference/decision_log.md) and [`docs/product/PRODUCT_DECISIONS_CHECKLIST.md`](docs/product/PRODUCT_DECISIONS_CHECKLIST.md)
 - **Product Architecture & ADRs:** See [`docs/architecture/system_architecture.md`](docs/architecture/system_architecture.md)
 - **Testing Strategy & Device Verification:** See [`docs/testing/test_strategy.md`](docs/testing/test_strategy.md) and [`docs/testing/real_device_test.md`](docs/testing/real_device_test.md)
 

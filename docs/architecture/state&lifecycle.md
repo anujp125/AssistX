@@ -1,5 +1,5 @@
-AssistX — State and Lifecycle Specification
-Document ID: NUDGE-STATE-001
+﻿AssistX — State and Lifecycle Specification
+Document ID: ASSISTX-STATE-001
 Version: 0.1
 Status: Draft — owner and technical review required
 Last updated: 2026-10-29

@@ -6,10 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.nudge.assist"
+    namespace = "com.assistx"
     compileSdk = 35
 
     defaultConfig {
+        // Preserved for installed-app update continuity and permission persistence across releases.
+        // Changing applicationId creates a separate app on device and requires manual reinstallation.
         applicationId = "com.nudge.assist"
         minSdk = 28
         targetSdk = 34

@@ -1,5 +1,5 @@
-AssistX — MVP Scope and Boundaries
-Document ID: NUDGE-SCOPE-001
+﻿AssistX — MVP Scope and Boundaries
+Document ID: ASSISTX-SCOPE-001
 Version: 0.1
 Status: Approved
 Last updated: 2026-10-29

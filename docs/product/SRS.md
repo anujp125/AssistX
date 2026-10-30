@@ -1,5 +1,5 @@
-AssistX — Software Requirements Specification (SRS)
-Document ID: NUDGE-SRS-001
+﻿AssistX — Software Requirements Specification (SRS)
+Document ID: ASSISTX-SRS-001
 Version: 0.1
 Status: Approved
 Last updated: 2026-10-29

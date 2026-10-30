@@ -1,5 +1,5 @@
-AssistX — Acceptance Tests
-Document ID: NUDGE-AT-001
+﻿AssistX — Acceptance Tests
+Document ID: ASSISTX-AT-001
 Version: 0.1
 Status: Draft — owner and technical review required
 Last updated: 2026-10-29

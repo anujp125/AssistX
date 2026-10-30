@@ -1,5 +1,5 @@
-AssistX — Module and Package Structure
-Document ID: NUDGE-STRUCTURE-001
+﻿AssistX — Module and Package Structure
+Document ID: ASSISTX-STRUCTURE-001
 Version: 0.1
 Status: Draft — owner review required
 Last updated: 2026-10-29
@@ -26,7 +26,7 @@ AssistX/
 │       ├── main/
 │       │   ├── AndroidManifest.xml
 │       │   ├── java/
-│       │   │   └── com/nudge/assist/
+│       │   │   └── com/assistx/
 │       │   │       ├── AssistXApplication.kt       # only if application-level setup is needed
 │       │   │       ├── MainActivity.kt           # if this is the selected entry point
 │       │   │       ├── ui/
@@ -46,9 +46,9 @@ AssistX/
 │       │       ├── values/
 │       │       └── xml/                          # e.g. accessibility config, only if needed
 │       ├── test/
-│       │   └── java/com/nudge/assist/...
+│       │   └── java/com/assistx/...
 │       └── androidTest/
-│           └── java/com/nudge/assist/...
+│           └── java/com/assistx/...
 ├── docs/
 │   ├── 01-product/
 │   ├── 02-architecture/
@@ -67,7 +67,7 @@ AssistX/
 └── LICENSE                              # after owner chooses a license
 Important qualifications
 - com/nudge/assist is a placeholder, not a literal package directory.
-- The final application ID and Kotlin package root are com.nudge.assist.
+- The final application ID and Kotlin package root are com.assistx.
 - MainActivity.kt is a suggested starting point; agents must align it with the selected UI toolkit and actual project.
 - AssistXApplication.kt, platform/, and other optional files should exist only if there is a concrete use for them.
 - accessibility/ must not be implemented merely because it appears in this template.
@@ -289,7 +289,7 @@ The actual permission list and service declarations belong in PERMISSIONS_AND_PL
 Mirror the production package structure where useful.
 
 Example:
-app/src/test/java/com/nudge/assist/
+app/src/test/java/com/assistx/
   state/
     StateTransitionTest.kt
   runtime/
@@ -300,7 +300,7 @@ app/src/test/java/com/nudge/assist/
     diagnostics/
       DiagnosticsRepositoryTest.kt
 
-app/src/androidTest/java/com/nudge/assist/
+app/src/androidTest/java/com/assistx/
   overlay/
     OverlayPermissionAndLifecycleTest.kt
   runtime/
@@ -335,7 +335,7 @@ Names should communicate responsibility and outcome. Avoid vague terms such as M
 
 The application ID/package root must be selected by the owner or recorded as an explicitly temporary development choice:
 - Application ID: com.nudge.assist
-- Kotlin package root: com.nudge.assist
+- Kotlin package root: com.assistx
 9. Dependency Rules
 - Start with Android/AndroidX and the Kotlin/Gradle tooling needed for the chosen project.
 - Add a third-party library only for an identified need that the standard platform or existing dependency cannot reasonably meet.
@@ -405,7 +405,7 @@ PS-10	CI platform and build variants	Approved: GitHub Actions + local gradlew ch
 14. Review and Approval
 - Product owner: Anuj Pawar (@anujp125)
 - Status: Draft / Approved
-- Approved package root: com.nudge.assist
+- Approved package root: com.assistx
 - Approved UI toolkit: Jetpack Compose with Material 3
 - Accepted deviations: None
 - Review notes: Package structure and architecture approved.

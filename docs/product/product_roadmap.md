@@ -1,5 +1,5 @@
-AssistX — Product Roadmap
-Document ID: NUDGE-ROADMAP-001
+﻿AssistX — Product Roadmap
+Document ID: ASSISTX-ROADMAP-001
 Version: 0.1
 Status: Approved
 Last updated: 2026-10-29
