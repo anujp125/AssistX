@@ -1,24 +1,24 @@
 package com.assistx.ui
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.assistx.AssistApplication
+import com.assistx.ui.components.AssistXSplashScreen
 import com.assistx.ui.theme.AssistXTheme
 import com.assistx.ui.theme.MetroAccent
 import com.assistx.ui.theme.ThemeMode
@@ -46,19 +46,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Android 12+ (API 31+) Smooth Fade-Out Splash Screen Exit Transition
+        // Android 12+ (API 31+) Hand off immediately to Compose animated splash
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             splashScreen.setOnExitAnimationListener { splashScreenView ->
-                val fadeOut = ObjectAnimator.ofFloat(splashScreenView, View.ALPHA, 1f, 0f).apply {
-                    duration = 200
-                    interpolator = AccelerateDecelerateInterpolator()
-                    addListener(object : AnimatorListenerAdapter() {
-                        override fun onAnimationEnd(animation: Animator) {
-                            splashScreenView.remove()
-                        }
-                    })
-                }
-                fadeOut.start()
+                splashScreenView.remove()
             }
         }
 
@@ -71,9 +62,22 @@ class MainActivity : ComponentActivity() {
                 else -> ThemeMode.DARK
             }
 
+            var isSplashVisible by rememberSaveable { mutableStateOf(true) }
+
             AssistXTheme(accent = accent, themeMode = themeMode) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    StudioScreen(viewModel = viewModel)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        StudioScreen(viewModel = viewModel)
+
+                        if (isSplashVisible) {
+                            AssistXSplashScreen(
+                                accentColor = accent.color,
+                                onAnimationComplete = {
+                                    isSplashVisible = false
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
