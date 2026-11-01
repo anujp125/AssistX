@@ -1,4 +1,4 @@
-﻿package com.assistx.data
+package com.assistx.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -21,6 +21,10 @@ data class OverlayPosition(
 class OverlayPreferences(private val context: Context) : UserPreferencesContract {
 
     companion object {
+        private const val SYNC_PREFS_NAME = "assistx_sync_cache"
+        private const val KEY_SYNC_ACCENT_HEX = "cached_accent_hex"
+        private const val KEY_SYNC_THEME_MODE = "cached_theme_mode"
+
         private val KEY_DESIRED_ENABLED = booleanPreferencesKey("desired_enabled")
         private val KEY_PAUSED_FOR_PAYMENTS = booleanPreferencesKey("paused_for_payments")
         private val KEY_POSITION_X = intPreferencesKey("button_position_x")
@@ -54,6 +58,44 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private val KEY_CAPSULE_CORNER_RADIUS = stringPreferencesKey("capsule_corner_radius")
     }
 
+    private val syncPrefs = context.getSharedPreferences(SYNC_PREFS_NAME, Context.MODE_PRIVATE)
+
+    override val initialSettings: OverlaySettings by lazy {
+        val cachedHex = syncPrefs.getString(KEY_SYNC_ACCENT_HEX, null) ?: extractFallbackAccent() ?: "#0050EF"
+        val cachedMode = syncPrefs.getString(KEY_SYNC_THEME_MODE, null) ?: "dark"
+        if (!syncPrefs.contains(KEY_SYNC_ACCENT_HEX)) {
+            syncPrefs.edit()
+                .putString(KEY_SYNC_ACCENT_HEX, cachedHex)
+                .putString(KEY_SYNC_THEME_MODE, cachedMode)
+                .apply()
+        }
+        OverlaySettings(
+            accentHex = cachedHex,
+            themeMode = cachedMode
+        )
+    }
+
+    private fun extractFallbackAccent(): String? {
+        try {
+            val file = java.io.File(context.filesDir, "datastore/assistx_preferences.preferences_pb")
+            if (!file.exists()) return null
+            val text = file.readBytes().toString(Charsets.ISO_8859_1)
+            val idx = text.indexOf("accent_hex")
+            if (idx != -1) {
+                val hashIdx = text.indexOf('#', idx)
+                if (hashIdx != -1 && hashIdx - idx < 30) {
+                    val candidate = text.substring(hashIdx, minOf(hashIdx + 7, text.length))
+                    if (candidate.matches(Regex("^#[0-9a-fA-F]{6}$"))) {
+                        return candidate
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignored fallback
+        }
+        return null
+    }
+
     override val desiredEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[KEY_DESIRED_ENABLED] ?: false
     }
@@ -70,7 +112,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     }
 
     override val settingsFlow: Flow<OverlaySettings> = context.dataStore.data.map { preferences ->
-        OverlaySettings(
+        val s = OverlaySettings(
             buttonSizeDp = preferences[KEY_BUTTON_SIZE_DP] ?: 56,
             idleOpacityPercent = preferences[KEY_IDLE_OPACITY_PERCENT] ?: 75,
             idleFadeSeconds = preferences[KEY_IDLE_FADE_SECONDS] ?: 3,
@@ -94,6 +136,11 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             capsuleStyle = preferences[KEY_CAPSULE_STYLE] ?: "OBSIDIAN",
             capsuleCornerRadius = preferences[KEY_CAPSULE_CORNER_RADIUS] ?: "PILL"
         )
+        syncPrefs.edit()
+            .putString(KEY_SYNC_ACCENT_HEX, s.accentHex)
+            .putString(KEY_SYNC_THEME_MODE, s.themeMode)
+            .apply()
+        s
     }
 
     override suspend fun setDesiredEnabled(enabled: Boolean) {
@@ -122,6 +169,10 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     }
 
     override suspend fun updateSettings(settings: OverlaySettings) {
+        syncPrefs.edit()
+            .putString(KEY_SYNC_ACCENT_HEX, settings.accentHex)
+            .putString(KEY_SYNC_THEME_MODE, settings.themeMode)
+            .apply()
         context.dataStore.edit { preferences ->
             preferences[KEY_BUTTON_SIZE_DP] = settings.buttonSizeDp
             preferences[KEY_IDLE_OPACITY_PERCENT] = settings.idleOpacityPercent
@@ -185,12 +236,14 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     }
 
     override suspend fun setAccentHex(hex: String) {
+        syncPrefs.edit().putString(KEY_SYNC_ACCENT_HEX, hex).apply()
         context.dataStore.edit { preferences ->
             preferences[KEY_ACCENT_HEX] = hex
         }
     }
 
     override suspend fun setThemeMode(mode: String) {
+        syncPrefs.edit().putString(KEY_SYNC_THEME_MODE, mode).apply()
         context.dataStore.edit { preferences ->
             preferences[KEY_THEME_MODE] = mode
         }

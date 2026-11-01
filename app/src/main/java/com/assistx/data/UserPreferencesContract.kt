@@ -1,4 +1,4 @@
-﻿package com.assistx.data
+package com.assistx.data
 
 import kotlinx.coroutines.flow.Flow
 
@@ -41,6 +41,7 @@ interface UserPreferencesContract {
     val isPausedForPaymentsFlow: Flow<Boolean>
     val positionFlow: Flow<OverlayPosition>
     val settingsFlow: Flow<OverlaySettings>
+    val initialSettings: OverlaySettings get() = OverlaySettings()
 
     suspend fun setDesiredEnabled(enabled: Boolean)
     suspend fun setPausedForPayments(paused: Boolean)

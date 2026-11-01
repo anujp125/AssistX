@@ -1,4 +1,4 @@
-﻿package com.assistx.runtime
+package com.assistx.runtime
 
 import com.assistx.data.OverlayPosition
 import com.assistx.data.UserPreferencesContract
@@ -67,6 +67,8 @@ class FakeUserPreferences : UserPreferencesContract {
     override val isPausedForPaymentsFlow: Flow<Boolean> = isPausedFlow
     override val positionFlow: Flow<OverlayPosition> = posFlow
     override val settingsFlow: Flow<com.assistx.data.OverlaySettings> = internalSettingsFlow
+    override val initialSettings: com.assistx.data.OverlaySettings
+        get() = internalSettingsFlow.value
 
     override suspend fun setDesiredEnabled(enabled: Boolean) {
         enabledFlow.value = enabled

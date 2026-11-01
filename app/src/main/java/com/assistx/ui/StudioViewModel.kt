@@ -1,4 +1,4 @@
-﻿package com.assistx.ui
+package com.assistx.ui
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -34,7 +34,7 @@ class StudioViewModel(
     val userFacingStatus: StateFlow<UserFacingStatus> = stateCoordinator.userFacingStatus
 
     val settings: StateFlow<OverlaySettings> = userPreferences.settingsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), OverlaySettings())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), userPreferences.initialSettings)
 
     val recentDiagnostics: StateFlow<List<DiagnosticEventEntity>> = diagnosticRecorder
         .getRecentEvents(100)

@@ -1,4 +1,4 @@
-﻿package com.assistx.ui
+package com.assistx.ui
 
 import com.assistx.accessibility.AccessibilityAdapterContract
 import com.assistx.accessibility.FakeAccessibilityAdapter
@@ -184,6 +184,25 @@ class StudioViewModelTest {
         assertEquals(4, settings.popoutDismissSeconds)
         assertEquals(true, settings.hapticFeedbackEnabled)
         assertEquals(true, settings.snapToEdgeEnabled)
+    }
+
+    @Test
+    fun testSettingsInitialStateMatchesUserPreferencesInitialSettings() {
+        val customPrefs = FakeUserPreferences()
+        customPrefs.internalSettingsFlow.value = com.assistx.data.OverlaySettings(
+            accentHex = "#AA00FF",
+            themeMode = "dark"
+        )
+        val customVm = StudioViewModel(
+            stateCoordinator = stateCoordinator,
+            runtimeController = runtimeController,
+            permissionAdapter = permissionAdapter,
+            accessibilityAdapter = accessibilityAdapter,
+            diagnosticRecorder = diagnosticRecorder,
+            userPreferences = customPrefs
+        )
+        assertEquals("#AA00FF", customVm.settings.value.accentHex)
+        assertEquals("dark", customVm.settings.value.themeMode)
     }
 
     @Test
