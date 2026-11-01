@@ -1,4 +1,4 @@
-﻿package com.assistx.ui.floating
+package com.assistx.ui.floating
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -255,8 +255,30 @@ class ActionPopoutView @JvmOverloads constructor(
         val relAnchorX = anchorX - popoutLoc[0]
         val relAnchorY = anchorY - popoutLoc[1]
 
-        val screenW = if (width > 0) width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
-        val screenH = if (height > 0) height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
+        var screenW = if (width > 0) width.toFloat() else context.resources.displayMetrics.widthPixels.toFloat()
+        var screenH = if (height > 0) height.toFloat() else context.resources.displayMetrics.heightPixels.toFloat()
+
+        if (width <= 0 || height <= 0) {
+            val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as? android.hardware.display.DisplayManager
+            val disp = display ?: displayManager?.getDisplay(android.view.Display.DEFAULT_DISPLAY)
+            if (disp != null) {
+                val dm = android.util.DisplayMetrics()
+                @Suppress("DEPRECATION")
+                disp.getRealMetrics(dm)
+                if (dm.widthPixels > 0 && dm.heightPixels > 0) {
+                    screenW = dm.widthPixels.toFloat()
+                    screenH = dm.heightPixels.toFloat()
+                }
+            }
+            val rotation = disp?.rotation ?: android.view.Surface.ROTATION_0
+            val isLand = rotation == android.view.Surface.ROTATION_90 || rotation == android.view.Surface.ROTATION_270 ||
+                    context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            if (isLand && screenW < screenH) {
+                val temp = screenW; screenW = screenH; screenH = temp
+            } else if (!isLand && screenW > screenH) {
+                val temp = screenW; screenW = screenH; screenH = temp
+            }
+        }
 
         val isHorizontal = popoutOrientation.contains("HORIZ") || popoutOrientation == "LEFT" || popoutOrientation == "RIGHT"
 

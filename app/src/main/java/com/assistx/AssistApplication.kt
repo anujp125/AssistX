@@ -1,4 +1,4 @@
-﻿package com.assistx
+package com.assistx
 
 import android.app.Application
 import android.app.NotificationChannel
@@ -104,6 +104,13 @@ class AssistApplication : Application() {
 
         // 6. Restore saved user state
         runtimeController.restoreStateOnLaunch()
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (::overlayManager.isInitialized) {
+            overlayManager.onConfigurationChanged()
+        }
     }
 
     private fun createNotificationChannel() {
