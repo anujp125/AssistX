@@ -83,6 +83,7 @@ import com.assistx.ui.components.MetroConfirmationDialog
 import com.assistx.ui.components.MetroHeader
 import com.assistx.ui.components.MetroOption
 import com.assistx.ui.components.MetroSegmentedPicker
+import com.assistx.util.AppIconVariant
 import com.assistx.ui.components.MetroSlider
 import com.assistx.ui.components.MetroTile
 import com.assistx.ui.components.MetroTileStyle
@@ -831,7 +832,187 @@ private fun StudioSettingsContent(
         }
 
         // =========================================================================
-        // 2. FLOATING BUTTON
+        // 2. APP DRAWER ICON
+        // =========================================================================
+        val currentIconVariant = remember(settings.appIconVariant) {
+            AppIconVariant.fromId(settings.appIconVariant)
+        }
+        MetroCollapsibleSection(
+            title = "app drawer icon",
+            subtitle = currentIconVariant.label,
+            initiallyExpanded = false
+        ) {
+            // Live Preview of Launcher Icon
+            Column {
+                Text(
+                    text = "launcher icon preview",
+                    style = MetroTypography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = textColor
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Preview Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF141416))
+                        .padding(vertical = 18.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // Squirclish squircle container resembling Android Launcher icon
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(Color(0xFF0C0C0E))
+                                .border(1.dp, Color(0xFF26262B)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val hex = currentIconVariant.accentHex
+                            val vColor = try {
+                                Color(android.graphics.Color.parseColor(hex))
+                            } catch (e: Exception) {
+                                Color(0xFFAA00FF)
+                            }
+                            // 2x2 grid inside preview
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(modifier = Modifier.size(13.dp).background(vColor.copy(alpha = 1.0f)))
+                                    Box(modifier = Modifier.size(13.dp).background(vColor.copy(alpha = 0.70f)))
+                                }
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(modifier = Modifier.size(13.dp).background(vColor.copy(alpha = 0.50f)))
+                                    Box(modifier = Modifier.size(13.dp).background(vColor.copy(alpha = 0.85f)))
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = currentIconVariant.label,
+                            style = MetroTypography.bodySmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = textColor
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Variant Selector Cards (2-Column Grid)
+            Column {
+                Text(
+                    text = "select style",
+                    style = MetroTypography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = textColor
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val context = LocalContext.current
+                val variants = remember { AppIconVariant.values().toList() }
+
+                for (rowVariants in variants.chunked(2)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        for (variant in rowVariants) {
+                            val isSelected = variant == currentIconVariant
+                            val variantAccent = try {
+                                Color(android.graphics.Color.parseColor(variant.accentHex))
+                            } catch (e: Exception) {
+                                Color(0xFFAA00FF)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        viewModel?.updateAppIconVariant(context, variant.id)
+                                    }
+                                    .background(if (isSelected) Color(0xFF1E1E24) else Color(0xFF141416))
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) accentColor else Color(0xFF26262B)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 10.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    // 2x2 miniature icon swatch
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(modifier = Modifier.size(7.dp).background(variantAccent.copy(alpha = 1.0f)))
+                                            Box(modifier = Modifier.size(7.dp).background(variantAccent.copy(alpha = 0.70f)))
+                                        }
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(modifier = Modifier.size(7.dp).background(variantAccent.copy(alpha = 0.50f)))
+                                            Box(modifier = Modifier.size(7.dp).background(variantAccent.copy(alpha = 0.85f)))
+                                        }
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = variant.label,
+                                            style = MetroTypography.bodySmall.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) textColor else textColor.copy(alpha = 0.75f)
+                                            ),
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            text = variant.accentHex,
+                                            style = MetroTypography.labelSmall.copy(
+                                                fontSize = 11.sp,
+                                                color = textColor.copy(alpha = 0.5f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (rowVariants.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            // Note regarding Android Launcher refresh
+            Text(
+                text = "note: android launchers may take a few seconds to refresh the icon in your app drawer.",
+                style = MetroTypography.bodySmall.copy(
+                    fontSize = 12.sp,
+                    color = textColor.copy(alpha = 0.5f)
+                )
+            )
+        }
+
+        // =========================================================================
+        // 3. FLOATING BUTTON
         // =========================================================================
         MetroCollapsibleSection(
             title = "floating button",

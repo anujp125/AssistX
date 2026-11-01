@@ -222,5 +222,19 @@ class StudioViewModelTest {
         assertEquals(DesiredState.ENABLED, stateCoordinator.currentSnapshot.desiredState)
         assertTrue(diagnosticRecorder.recordedEvents.any { it.eventType == "RESUME_FROM_PAYMENTS_TRIGGERED" })
     }
+
+    @Test
+    fun testAppIconVariantEnumAndSettingsDefaults() {
+        assertEquals("VIOLET", userPreferences.internalSettingsFlow.value.appIconVariant)
+        assertEquals(com.assistx.util.AppIconVariant.VIOLET, com.assistx.util.AppIconVariant.fromId("VIOLET"))
+        assertEquals(com.assistx.util.AppIconVariant.PURPLE, com.assistx.util.AppIconVariant.fromId("PURPLE"))
+        assertEquals(com.assistx.util.AppIconVariant.COBALT, com.assistx.util.AppIconVariant.fromId("COBALT"))
+        assertEquals(com.assistx.util.AppIconVariant.EMERALD, com.assistx.util.AppIconVariant.fromId("EMERALD"))
+        assertEquals(com.assistx.util.AppIconVariant.CRIMSON, com.assistx.util.AppIconVariant.fromId("CRIMSON"))
+        assertEquals(com.assistx.util.AppIconVariant.AMBER, com.assistx.util.AppIconVariant.fromId("AMBER"))
+        assertEquals(com.assistx.util.AppIconVariant.CYAN, com.assistx.util.AppIconVariant.fromId("CYAN"))
+        assertEquals(com.assistx.util.AppIconVariant.MONOCHROME, com.assistx.util.AppIconVariant.fromId("MONOCHROME"))
+        assertEquals(com.assistx.util.AppIconVariant.VIOLET, com.assistx.util.AppIconVariant.fromId("UNKNOWN_ID"))
+    }
 }
 

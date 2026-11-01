@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- AssistX 2x2 Geometric Tile Mark: amber -->
+    <path
+        android:fillColor="#FFF0A30A"
+        android:pathData="M31,31 h21 v21 h-21 z" />
+    <path
+        android:fillColor="#B3F0A30A"
+        android:pathData="M56,31 h21 v21 h-21 z" />
+    <path
+        android:fillColor="#80F0A30A"
+        android:pathData="M31,56 h21 v21 h-21 z" />
+    <path
+        android:fillColor="#D9F0A30A"
+        android:pathData="M56,56 h21 v21 h-21 z" />
+</vector>

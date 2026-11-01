@@ -30,7 +30,10 @@ data class OverlaySettings(
     // Popout Background Capsule Element
     val capsuleEnabled: Boolean = false,
     val capsuleStyle: String = "OBSIDIAN",       // OBSIDIAN, METRO_BLACK, SOLID_ACCENT, OUTLINE_ONLY
-    val capsuleCornerRadius: String = "PILL"     // PILL, METRO_SQUARE, ROUNDED
+    val capsuleCornerRadius: String = "PILL",    // PILL, METRO_SQUARE, ROUNDED
+
+    // App Drawer Launcher Icon
+    val appIconVariant: String = "VIOLET"        // VIOLET, PURPLE, COBALT, EMERALD, CRIMSON, AMBER, CYAN, MONOCHROME
 )
 
 /**
@@ -72,4 +75,7 @@ interface UserPreferencesContract {
     suspend fun setCapsuleEnabled(enabled: Boolean)
     suspend fun setCapsuleStyle(style: String)
     suspend fun setCapsuleCornerRadius(radius: String)
+
+    // App Drawer Launcher Icon
+    suspend fun setAppIconVariant(variant: String)
 }

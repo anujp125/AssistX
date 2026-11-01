@@ -24,6 +24,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private const val SYNC_PREFS_NAME = "assistx_sync_cache"
         private const val KEY_SYNC_ACCENT_HEX = "cached_accent_hex"
         private const val KEY_SYNC_THEME_MODE = "cached_theme_mode"
+        private const val KEY_SYNC_APP_ICON_VARIANT = "cached_app_icon_variant"
 
         private val KEY_DESIRED_ENABLED = booleanPreferencesKey("desired_enabled")
         private val KEY_PAUSED_FOR_PAYMENTS = booleanPreferencesKey("paused_for_payments")
@@ -56,6 +57,9 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private val KEY_CAPSULE_ENABLED = booleanPreferencesKey("capsule_enabled")
         private val KEY_CAPSULE_STYLE = stringPreferencesKey("capsule_style")
         private val KEY_CAPSULE_CORNER_RADIUS = stringPreferencesKey("capsule_corner_radius")
+
+        // App Drawer Icon Key
+        private val KEY_APP_ICON_VARIANT = stringPreferencesKey("app_icon_variant")
     }
 
     private val syncPrefs = context.getSharedPreferences(SYNC_PREFS_NAME, Context.MODE_PRIVATE)
@@ -63,15 +67,18 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     override val initialSettings: OverlaySettings by lazy {
         val cachedHex = syncPrefs.getString(KEY_SYNC_ACCENT_HEX, null) ?: extractFallbackAccent() ?: "#0050EF"
         val cachedMode = syncPrefs.getString(KEY_SYNC_THEME_MODE, null) ?: "dark"
+        val cachedIcon = syncPrefs.getString(KEY_SYNC_APP_ICON_VARIANT, null) ?: "VIOLET"
         if (!syncPrefs.contains(KEY_SYNC_ACCENT_HEX)) {
             syncPrefs.edit()
                 .putString(KEY_SYNC_ACCENT_HEX, cachedHex)
                 .putString(KEY_SYNC_THEME_MODE, cachedMode)
+                .putString(KEY_SYNC_APP_ICON_VARIANT, cachedIcon)
                 .apply()
         }
         OverlaySettings(
             accentHex = cachedHex,
-            themeMode = cachedMode
+            themeMode = cachedMode,
+            appIconVariant = cachedIcon
         )
     }
 
@@ -134,11 +141,14 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
 
             capsuleEnabled = preferences[KEY_CAPSULE_ENABLED] ?: false,
             capsuleStyle = preferences[KEY_CAPSULE_STYLE] ?: "OBSIDIAN",
-            capsuleCornerRadius = preferences[KEY_CAPSULE_CORNER_RADIUS] ?: "PILL"
+            capsuleCornerRadius = preferences[KEY_CAPSULE_CORNER_RADIUS] ?: "PILL",
+
+            appIconVariant = preferences[KEY_APP_ICON_VARIANT] ?: "VIOLET"
         )
         syncPrefs.edit()
             .putString(KEY_SYNC_ACCENT_HEX, s.accentHex)
             .putString(KEY_SYNC_THEME_MODE, s.themeMode)
+            .putString(KEY_SYNC_APP_ICON_VARIANT, s.appIconVariant)
             .apply()
         s
     }
@@ -172,6 +182,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         syncPrefs.edit()
             .putString(KEY_SYNC_ACCENT_HEX, settings.accentHex)
             .putString(KEY_SYNC_THEME_MODE, settings.themeMode)
+            .putString(KEY_SYNC_APP_ICON_VARIANT, settings.appIconVariant)
             .apply()
         context.dataStore.edit { preferences ->
             preferences[KEY_BUTTON_SIZE_DP] = settings.buttonSizeDp
@@ -196,6 +207,8 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             preferences[KEY_CAPSULE_ENABLED] = settings.capsuleEnabled
             preferences[KEY_CAPSULE_STYLE] = settings.capsuleStyle
             preferences[KEY_CAPSULE_CORNER_RADIUS] = settings.capsuleCornerRadius
+
+            preferences[KEY_APP_ICON_VARIANT] = settings.appIconVariant
         }
     }
 
@@ -312,6 +325,13 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     override suspend fun setCapsuleCornerRadius(radius: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_CAPSULE_CORNER_RADIUS] = radius
+        }
+    }
+
+    override suspend fun setAppIconVariant(variant: String) {
+        syncPrefs.edit().putString(KEY_SYNC_APP_ICON_VARIANT, variant).apply()
+        context.dataStore.edit { preferences ->
+            preferences[KEY_APP_ICON_VARIANT] = variant
         }
     }
 }

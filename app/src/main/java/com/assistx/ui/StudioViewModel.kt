@@ -251,6 +251,19 @@ class StudioViewModel(
         }
     }
 
+    fun updateAppIconVariant(context: Context, variant: String) {
+        val v = com.assistx.util.AppIconVariant.fromId(variant)
+        com.assistx.util.AppIconManager.applyIconVariant(context.applicationContext, v)
+        viewModelScope.launch {
+            userPreferences.setAppIconVariant(v.id)
+            diagnosticRecorder.recordEvent(
+                eventType = "APP_ICON_VARIANT_CHANGED",
+                component = "STUDIO",
+                details = "Applied variant: ${v.label} (${v.id})"
+            )
+        }
+    }
+
     fun resetSettingsToDefault() {
         viewModelScope.launch {
             userPreferences.updateSettings(OverlaySettings())

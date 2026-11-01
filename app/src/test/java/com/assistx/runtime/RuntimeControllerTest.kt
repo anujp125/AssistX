@@ -167,6 +167,10 @@ class FakeUserPreferences : UserPreferencesContract {
     override suspend fun setCapsuleCornerRadius(radius: String) {
         internalSettingsFlow.value = internalSettingsFlow.value.copy(capsuleCornerRadius = radius)
     }
+
+    override suspend fun setAppIconVariant(variant: String) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(appIconVariant = variant)
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
