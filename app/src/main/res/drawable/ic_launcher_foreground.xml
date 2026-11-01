@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- AssistX Metro 2x2 Geometric Tile Mark: Centered within 66dp circular safe zone -->
+    <!-- Tile 1 (Top-Left): 100% Opacity Vibrant AssistX Purple -->
+    <path
+        android:fillColor="#FFAA00FF"
+        android:pathData="M31,31 h21 v21 h-21 z" />
+    <!-- Tile 2 (Top-Right): 70% Opacity -->
+    <path
+        android:fillColor="#B3AA00FF"
+        android:pathData="M56,31 h21 v21 h-21 z" />
+    <!-- Tile 3 (Bottom-Left): 50% Opacity -->
+    <path
+        android:fillColor="#80AA00FF"
+        android:pathData="M31,56 h21 v21 h-21 z" />
+    <!-- Tile 4 (Bottom-Right): 85% Opacity -->
+    <path
+        android:fillColor="#D9AA00FF"
+        android:pathData="M56,56 h21 v21 h-21 z" />
+</vector>
+
