@@ -1,9 +1,10 @@
-﻿package com.assistx.ui
+package com.assistx.ui
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,11 +19,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -40,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,11 +57,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.absoluteValue
 import com.assistx.R
 import com.assistx.data.OverlaySettings
 import com.assistx.data.diagnostics.DiagnosticEventEntity
@@ -102,6 +109,17 @@ enum class StudioPivotSection {
     OVERVIEW,
     SETTINGS
 }
+
+/**
+ * Classic Windows Phone Metro easing curve: Fast-in, slow-out deceleration.
+ * Rapidly initiates motion with responsive urgency, then smoothly glides into the resting position.
+ */
+private val MetroPivotEasing = CubicBezierEasing(0.10f, 0.90f, 0.20f, 1.0f)
+
+private val MetroPivotAnimationSpec = tween<Float>(
+    durationMillis = 380,
+    easing = MetroPivotEasing
+)
 
 /**
  * Merged Windows Phone "Metro" Studio Screen.
@@ -227,7 +245,7 @@ fun StudioScreen(viewModel: StudioViewModel? = null) {
                     val targetScreen = MetroAppScreen.valueOf(id)
                     if (currentScreen == MetroAppScreen.STUDIO && targetScreen == MetroAppScreen.STUDIO && pagerState.currentPage != 0) {
                         coroutineScope.launch {
-                            pagerState.animateScrollToPage(0, animationSpec = tween(200))
+                            pagerState.animateScrollToPage(0, animationSpec = MetroPivotAnimationSpec)
                         }
                     }
                     currentScreen = targetScreen
@@ -243,64 +261,92 @@ fun StudioScreen(viewModel: StudioViewModel? = null) {
             when (currentScreen) {
                 MetroAppScreen.STUDIO -> {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Metro Pivot Headers: "overview" | "settings"
+                        // Continuous scroll fraction for silky-smooth panoramic header tracking
+                        val continuousPosition by remember {
+                            derivedStateOf {
+                                pagerState.currentPage + pagerState.currentPageOffsetFraction
+                            }
+                        }
+
+                        // Metro Pivot Headers: "overview" | "settings" with panoramic parallax
                         MetroPivotBar(
-                            selected = StudioPivotSection.values()[pagerState.currentPage],
+                            currentPosition = continuousPosition,
                             onSelect = { section ->
                                 coroutineScope.launch {
                                     pagerState.animateScrollToPage(
                                         page = section.ordinal,
-                                        animationSpec = tween(durationMillis = 200)
+                                        animationSpec = MetroPivotAnimationSpec
                                     )
                                 }
                             }
                         )
 
-                        // Pivot Horizontal Pager (Full Swipe Gesture Support)
+                        // Panoramic Horizontal Pager with native fling behavior and layered depth
+                        val flingBehavior = PagerDefaults.flingBehavior(
+                            state = pagerState,
+                            snapAnimationSpec = MetroPivotAnimationSpec
+                        )
+
                         HorizontalPager(
                             state = pagerState,
+                            flingBehavior = flingBehavior,
+                            pageSpacing = 16.dp,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
                         ) { page ->
-                            when (StudioPivotSection.values()[page]) {
-                                StudioPivotSection.OVERVIEW -> StudioOverviewContent(
-                                    snapshot = snapshot,
-                                    userFacingStatus = userFacingStatus,
-                                    settings = settings,
-                                    onToggleMaster = {
-                                        viewModel?.onToggleMaster(snapshot.desiredState != DesiredState.ENABLED)
-                                    },
-                                    onPauseForPayments = {
-                                        showPauseConfirmDialog = true
-                                    },
-                                    onResumeFromPayments = {
-                                        viewModel?.onResumeFromPayments()
-                                    },
-                                    onFixOverlay = {
-                                        val intent = Intent(
-                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                            Uri.parse("package:${context.packageName}")
-                                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                                        context.startActivity(intent)
-                                    },
-                                    onFixAccessibility = {
-                                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                                        context.startActivity(intent)
-                                    }
-                                )
+                            val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+                            val parallaxFraction = pageOffset.coerceIn(-1f, 1f)
 
-                                StudioPivotSection.SETTINGS -> key(settingsEntryKey) {
-                                    StudioSettingsContent(
-                                        settings = settings,
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        // Subtle panoramic parallax translation (0.12x speed differential)
+                                        translationX = parallaxFraction * size.width * 0.12f
+                                        // Elegant focus dimming as the section recedes
+                                        alpha = (1f - (parallaxFraction.absoluteValue * 0.35f)).coerceIn(0.55f, 1f)
+                                    }
+                            ) {
+                                when (StudioPivotSection.values()[page]) {
+                                    StudioPivotSection.OVERVIEW -> StudioOverviewContent(
                                         snapshot = snapshot,
-                                        viewModel = viewModel,
-                                        onRequestPauseForPayments = {
+                                        userFacingStatus = userFacingStatus,
+                                        settings = settings,
+                                        onToggleMaster = {
+                                            viewModel?.onToggleMaster(snapshot.desiredState != DesiredState.ENABLED)
+                                        },
+                                        onPauseForPayments = {
                                             showPauseConfirmDialog = true
+                                        },
+                                        onResumeFromPayments = {
+                                            viewModel?.onResumeFromPayments()
+                                        },
+                                        onFixOverlay = {
+                                            val intent = Intent(
+                                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                                Uri.parse("package:${context.packageName}")
+                                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                                            context.startActivity(intent)
+                                        },
+                                        onFixAccessibility = {
+                                            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(intent)
                                         }
                                     )
+
+                                    StudioPivotSection.SETTINGS -> key(settingsEntryKey) {
+                                        StudioSettingsContent(
+                                            settings = settings,
+                                            snapshot = snapshot,
+                                            viewModel = viewModel,
+                                            onRequestPauseForPayments = {
+                                                showPauseConfirmDialog = true
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -322,37 +368,53 @@ fun StudioScreen(viewModel: StudioViewModel? = null) {
 
 /**
  * Metro Pivot Bar ("overview" | "settings").
- * Active section is bold and full opacity; inactive section is dimmed.
+ * - Fluid continuous parallax drift matching classic Windows Phone Panorama viewports.
+ * - Dynamic alpha and typographic focus cross-fade linked directly to scroll offset.
  */
 @Composable
 private fun MetroPivotBar(
-    selected: StudioPivotSection,
-    onSelect: (StudioPivotSection) -> Unit
+    currentPosition: Float,
+    onSelect: (StudioPivotSection) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val haptics = remember { MetroHaptics(context) }
     val isDark = LocalMetroIsDark.current
     val textColor = if (isDark) MetroWhite else MetroBlack
 
+    val maxIndex = (StudioPivotSection.values().size - 1).toFloat()
+    val clampedPos = currentPosition.coerceIn(0f, maxIndex)
+    // Parallax drift: the header row smoothly shifts by up to 28dp to the left as you navigate to settings
+    val headerParallaxOffset = (-clampedPos * 28).dp
+
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 6.dp),
+            .offset(x = headerParallaxOffset)
+            .padding(start = 24.dp, end = 24.dp, top = 6.dp, bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(28.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StudioPivotSection.values().forEach { section ->
-            val isSelected = section == selected
-            val alpha = if (isSelected) 1.0f else 0.40f
+        StudioPivotSection.values().forEachIndexed { index, section ->
+            val distance = (clampedPos - index).absoluteValue
+            val selectionWeight = (1f - distance).coerceIn(0f, 1f)
+            val alpha = 0.38f + (selectionWeight * 0.62f)
+            val scale = 0.96f + (selectionWeight * 0.06f)
+            val isSelected = distance < 0.5f
 
             Text(
                 text = section.name.lowercase(),
                 style = MetroTypography.headlineMedium.copy(
                     fontSize = 24.sp,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Light,
+                    fontWeight = if (selectionWeight > 0.5f) FontWeight.SemiBold else FontWeight.Light,
                     color = textColor.copy(alpha = alpha)
                 ),
                 modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        transformOrigin = TransformOrigin(0f, 0.5f)
+                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
