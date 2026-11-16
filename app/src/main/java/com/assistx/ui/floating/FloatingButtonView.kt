@@ -1,4 +1,4 @@
-﻿package com.assistx.ui.floating
+package com.assistx.ui.floating
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -41,8 +41,10 @@ class FloatingButtonView @JvmOverloads constructor(
         fun onSingleTap()
         fun onDoubleTap()
         fun onLongPress()
+        fun onDragStarted() {}
         fun onDragMoved(deltaX: Float, deltaY: Float)
         fun onDragReleased()
+        fun onOrientationChanged() {}
     }
 
     var listener: InteractionListener? = null
@@ -239,6 +241,11 @@ class FloatingButtonView @JvmOverloads constructor(
         }
     }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        listener?.onOrientationChanged()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         handler.removeCallbacksAndMessages(null)
@@ -256,6 +263,7 @@ class FloatingButtonView @JvmOverloads constructor(
                 isDragging = false
                 totalDragDistance = 0f
                 fadeToActiveAlpha()
+                listener?.onDragStarted()
                 return true
             }
 

@@ -15,7 +15,10 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 data class OverlayPosition(
     val x: Int = -1,
-    val y: Int = -1
+    val y: Int = -1,
+    val isAnchoredToRight: Boolean = true,
+    val lastScreenWidth: Int = 0,
+    val lastScreenHeight: Int = 0
 )
 
 class OverlayPreferences(private val context: Context) : UserPreferencesContract {
@@ -30,6 +33,9 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private val KEY_PAUSED_FOR_PAYMENTS = booleanPreferencesKey("paused_for_payments")
         private val KEY_POSITION_X = intPreferencesKey("button_position_x")
         private val KEY_POSITION_Y = intPreferencesKey("button_position_y")
+        private val KEY_IS_ANCHORED_TO_RIGHT = booleanPreferencesKey("is_anchored_to_right")
+        private val KEY_LAST_SCREEN_WIDTH = intPreferencesKey("last_screen_width")
+        private val KEY_LAST_SCREEN_HEIGHT = intPreferencesKey("last_screen_height")
 
         // User Customization Settings Keys
         private val KEY_BUTTON_SIZE_DP = intPreferencesKey("button_size_dp")
@@ -114,7 +120,10 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     override val positionFlow: Flow<OverlayPosition> = context.dataStore.data.map { preferences ->
         OverlayPosition(
             x = preferences[KEY_POSITION_X] ?: -1,
-            y = preferences[KEY_POSITION_Y] ?: -1
+            y = preferences[KEY_POSITION_Y] ?: -1,
+            isAnchoredToRight = preferences[KEY_IS_ANCHORED_TO_RIGHT] ?: true,
+            lastScreenWidth = preferences[KEY_LAST_SCREEN_WIDTH] ?: 0,
+            lastScreenHeight = preferences[KEY_LAST_SCREEN_HEIGHT] ?: 0
         )
     }
 
@@ -172,9 +181,22 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     }
 
     override suspend fun savePosition(x: Int, y: Int) {
+        savePosition(x, y, true, 0, 0)
+    }
+
+    override suspend fun savePosition(
+        x: Int,
+        y: Int,
+        isAnchoredToRight: Boolean,
+        screenWidth: Int,
+        screenHeight: Int
+    ) {
         context.dataStore.edit { preferences ->
             preferences[KEY_POSITION_X] = x
             preferences[KEY_POSITION_Y] = y
+            preferences[KEY_IS_ANCHORED_TO_RIGHT] = isAnchoredToRight
+            preferences[KEY_LAST_SCREEN_WIDTH] = screenWidth
+            preferences[KEY_LAST_SCREEN_HEIGHT] = screenHeight
         }
     }
 

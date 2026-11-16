@@ -16,6 +16,7 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import com.assistx.R
 import com.assistx.ui.haptics.MetroHaptics
@@ -265,18 +266,11 @@ class ActionPopoutView @JvmOverloads constructor(
                 val dm = android.util.DisplayMetrics()
                 @Suppress("DEPRECATION")
                 disp.getRealMetrics(dm)
-                if (dm.widthPixels > 0 && dm.heightPixels > 0) {
-                    screenW = dm.widthPixels.toFloat()
-                    screenH = dm.heightPixels.toFloat()
-                }
-            }
-            val rotation = disp?.rotation ?: android.view.Surface.ROTATION_0
-            val isLand = rotation == android.view.Surface.ROTATION_90 || rotation == android.view.Surface.ROTATION_270 ||
-                    context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-            if (isLand && screenW < screenH) {
-                val temp = screenW; screenW = screenH; screenH = temp
-            } else if (!isLand && screenW > screenH) {
-                val temp = screenW; screenW = screenH; screenH = temp
+                val rawW = dm.widthPixels.toFloat()
+                val rawH = dm.heightPixels.toFloat()
+                val isLand = (disp.rotation == android.view.Surface.ROTATION_90 || disp.rotation == android.view.Surface.ROTATION_270)
+                screenW = if (isLand) maxOf(rawW, rawH) else minOf(rawW, rawH)
+                screenH = if (isLand) minOf(rawW, rawH) else maxOf(rawW, rawH)
             }
         }
 

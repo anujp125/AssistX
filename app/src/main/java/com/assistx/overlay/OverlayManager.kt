@@ -1,12 +1,18 @@
 package com.assistx.overlay
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
+import android.view.Display
 import android.view.Gravity
 import android.view.Surface
 import android.view.WindowManager
@@ -96,6 +102,32 @@ class OverlayManager(
     private var lastScreenWidth: Int = 0
     private var lastScreenHeight: Int = 0
 
+    private var isUserInteracting: Boolean = false
+    private var pendingOrientationCheckRunnable: Runnable? = null
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var snapAnimator: ValueAnimator? = null
+
+    private val displayManager by lazy {
+        context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
+    }
+
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            handleOrientationOrDisplayChange()
+        }
+    }
+
+    private val componentCallbacks = object : ComponentCallbacks2 {
+        override fun onConfigurationChanged(newConfig: Configuration) {
+            handleOrientationOrDisplayChange()
+        }
+        override fun onLowMemory() {}
+        override fun onTrimMemory(level: Int) {}
+    }
+
     val isPopoutShowing: Boolean
         get() = popoutView != null
 
@@ -117,105 +149,79 @@ class OverlayManager(
     )
 
     fun getSafeBounds(sizePx: Int): ScreenBounds {
-        val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
         val display = floatingView?.display
             ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
                     context.display
                 } catch (e: Exception) {
-                    displayManager?.getDisplay(android.view.Display.DEFAULT_DISPLAY)
+                    displayManager?.getDisplay(Display.DEFAULT_DISPLAY)
                 }
             } else {
                 @Suppress("DEPRECATION")
                 windowManager.defaultDisplay
-            } ?: displayManager?.getDisplay(android.view.Display.DEFAULT_DISPLAY)
-
-        var screenW = 0
-        var screenH = 0
-
-        if (display != null) {
-            val realMetrics = DisplayMetrics()
-            @Suppress("DEPRECATION")
-            display.getRealMetrics(realMetrics)
-            screenW = realMetrics.widthPixels
-            screenH = realMetrics.heightPixels
-        }
-
-        if (screenW <= 0 || screenH <= 0) {
-            val displayMetrics = context.resources.displayMetrics
-            screenW = displayMetrics.widthPixels
-            screenH = displayMetrics.heightPixels
-        }
+            } ?: displayManager?.getDisplay(Display.DEFAULT_DISPLAY)
 
         val rotation = display?.rotation ?: Surface.ROTATION_0
-        val isLandscapeRotation = (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270)
-        val isLandscapeConfig = context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val isLandscape = isLandscapeRotation || isLandscapeConfig
+        val isLandscape = (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270)
 
-        if (isLandscape && screenW < screenH) {
-            val temp = screenW
-            screenW = screenH
-            screenH = temp
-        } else if (!isLandscape && screenW > screenH) {
-            val temp = screenW
-            screenW = screenH
-            screenH = temp
+        val realMetrics = DisplayMetrics()
+        @Suppress("DEPRECATION")
+        display?.getRealMetrics(realMetrics)
+
+        var rawW = realMetrics.widthPixels
+        var rawH = realMetrics.heightPixels
+
+        if (rawW <= 0 || rawH <= 0) {
+            val dm = context.resources.displayMetrics
+            rawW = dm.widthPixels
+            rawH = dm.heightPixels
         }
 
+        // True physical screen width and height tied to hardware orientation.
+        // Guarantees landscape mode always receives the full long dimension,
+        // eliminating race conditions from stale Application-context metrics.
+        val screenW = if (isLandscape) {
+            maxOf(rawW, rawH)
+        } else {
+            minOf(rawW, rawH)
+        }
+
+        val screenH = if (isLandscape) {
+            minOf(rawW, rawH)
+        } else {
+            maxOf(rawW, rawH)
+        }
+
+        // Determine display cutouts and system insets
         var insetLeft = 0
         var insetTop = 0
         var insetRight = 0
         var insetBottom = 0
+
+        val cutout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            display?.cutout
+        } else null
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val viewInsets = floatingView?.takeIf { it.isAttachedToWindow }?.rootWindowInsets?.getInsetsIgnoringVisibility(
                 android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout()
             )
             if (viewInsets != null) {
-                insetLeft = viewInsets.left
-                insetTop = viewInsets.top
-                insetRight = viewInsets.right
-                insetBottom = viewInsets.bottom
+                insetLeft = maxOf(viewInsets.left, cutout?.safeInsetLeft ?: 0)
+                insetTop = maxOf(viewInsets.top, cutout?.safeInsetTop ?: 0)
+                insetRight = maxOf(viewInsets.right, cutout?.safeInsetRight ?: 0)
+                insetBottom = maxOf(viewInsets.bottom, cutout?.safeInsetBottom ?: 0)
             } else {
-                try {
-                    val windowMetrics = windowManager.currentWindowMetrics
-                    val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(
-                        android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout()
-                    )
-                    val wmBounds = windowMetrics.bounds
-                    val wmIsLandscape = wmBounds.width() > wmBounds.height()
-
-                    if (isLandscape && !wmIsLandscape) {
-                        when (rotation) {
-                            Surface.ROTATION_90 -> {
-                                insetLeft = insets.top
-                                insetTop = insets.right
-                                insetRight = insets.bottom
-                                insetBottom = insets.left
-                            }
-                            Surface.ROTATION_270 -> {
-                                insetLeft = insets.bottom
-                                insetTop = insets.left
-                                insetRight = insets.top
-                                insetBottom = insets.right
-                            }
-                            else -> {
-                                insetLeft = insets.top
-                                insetRight = insets.bottom
-                                insetTop = 0
-                                insetBottom = 0
-                            }
-                        }
-                    } else {
-                        insetLeft = insets.left
-                        insetTop = insets.top
-                        insetRight = insets.right
-                        insetBottom = insets.bottom
-                    }
-                } catch (e: Exception) {
-                    // Fallback to 0 insets
-                }
+                insetLeft = cutout?.safeInsetLeft ?: 0
+                insetTop = cutout?.safeInsetTop ?: 0
+                insetRight = cutout?.safeInsetRight ?: 0
+                insetBottom = cutout?.safeInsetBottom ?: 0
             }
+        } else {
+            insetLeft = cutout?.safeInsetLeft ?: 0
+            insetTop = cutout?.safeInsetTop ?: 0
+            insetRight = cutout?.safeInsetRight ?: 0
+            insetBottom = cutout?.safeInsetBottom ?: 0
         }
 
         val density = context.resources.displayMetrics.density
@@ -350,6 +356,15 @@ class OverlayManager(
                         handleLongPress()
                     }
 
+                    override fun onDragStarted() {
+                        synchronized(windowLock) {
+                            isUserInteracting = true
+                            snapAnimator?.cancel()
+                            snapAnimator = null
+                            pendingOrientationCheckRunnable?.let { mainHandler.removeCallbacks(it) }
+                        }
+                    }
+
                     override fun onDragMoved(deltaX: Float, deltaY: Float) {
                         dismissPopout()
                         handleDragMoved(deltaX, deltaY)
@@ -357,6 +372,10 @@ class OverlayManager(
 
                     override fun onDragReleased() {
                         handleDragReleased()
+                    }
+
+                    override fun onOrientationChanged() {
+                        handleOrientationOrDisplayChange()
                     }
                 }
             }
@@ -366,6 +385,14 @@ class OverlayManager(
             layoutParams = params
             isAttached = true
             stateCoordinator.updateOverlayState(OverlayState.ATTACHED)
+
+            // Register dynamic display and component orientation observers
+            displayManager?.registerDisplayListener(displayListener, mainHandler)
+            try {
+                context.registerComponentCallbacks(componentCallbacks)
+            } catch (e: Exception) {
+                // Ignore if context does not support callbacks
+            }
 
             // Restore saved coordinates asynchronously if available
             restoreSavedPositionAsync()
@@ -387,6 +414,17 @@ class OverlayManager(
     override fun detachOverlay(): Boolean = synchronized(windowLock) {
         dismissPopout()
         dismissAccessibilityDialog()
+        snapAnimator?.cancel()
+        snapAnimator = null
+        pendingOrientationCheckRunnable?.let { mainHandler.removeCallbacks(it) }
+        isUserInteracting = false
+
+        displayManager?.unregisterDisplayListener(displayListener)
+        try {
+            context.unregisterComponentCallbacks(componentCallbacks)
+        } catch (e: Exception) {
+            // Ignore
+        }
 
         if (!isAttached || floatingView == null) {
             stateCoordinator.updateOverlayState(OverlayState.DETACHED)
@@ -623,9 +661,15 @@ class OverlayManager(
     private fun handleDragMoved(deltaX: Float, deltaY: Float) = synchronized(windowLock) {
         val params = layoutParams ?: return@synchronized
         val view = floatingView ?: return@synchronized
+        val bounds = getSafeBounds(buttonSizePx)
 
-        params.x = (params.x + deltaX.toInt())
-        params.y = (params.y + deltaY.toInt())
+        // Softly clamp X during drag allowing slight overshoot for natural touch feel
+        val overscroll = buttonSizePx / 3
+        params.x = (params.x + deltaX.toInt()).coerceIn(bounds.minX - overscroll, bounds.maxX + overscroll)
+        params.y = (params.y + deltaY.toInt()).coerceIn(bounds.minY, bounds.maxY)
+
+        // Dynamically track anchor intent during drag
+        isAnchoredToRight = (params.x + buttonSizePx / 2) >= (bounds.screenWidth / 2)
 
         try {
             windowManager.updateViewLayout(view, params)
@@ -635,6 +679,7 @@ class OverlayManager(
     }
 
     private fun handleDragReleased() = synchronized(windowLock) {
+        isUserInteracting = false
         val params = layoutParams ?: return@synchronized
         val view = floatingView ?: return@synchronized
         val size = buttonSizePx
@@ -656,7 +701,13 @@ class OverlayManager(
                 // View may be detaching
             }
             scope.launch(Dispatchers.IO) {
-                preferences.savePosition(params.x, params.y)
+                preferences.savePosition(
+                    params.x,
+                    params.y,
+                    isAnchoredToRight,
+                    bounds.screenWidth,
+                    bounds.screenHeight
+                )
             }
             return@synchronized
         }
@@ -664,69 +715,159 @@ class OverlayManager(
         // Determine nearest safe edge (left or right)
         val targetX = if (isRight) bounds.maxX else bounds.minX
 
-        // Animate snap to edge
+        // Cancel previous snap animator
+        snapAnimator?.cancel()
         val startX = params.x
-        ValueAnimator.ofInt(startX, targetX).apply {
+        snapAnimator = ValueAnimator.ofInt(startX, targetX).apply {
             duration = 250
             interpolator = DecelerateInterpolator()
             addUpdateListener { animator ->
-                params.x = animator.animatedValue as Int
-                try {
-                    windowManager.updateViewLayout(view, params)
-                } catch (e: Exception) {
-                    // View may be detaching
+                synchronized(windowLock) {
+                    if (isAttached && floatingView === view) {
+                        params.x = (animator.animatedValue as Int).coerceIn(bounds.minX, bounds.maxX)
+                        try {
+                            windowManager.updateViewLayout(view, params)
+                        } catch (e: Exception) {
+                            // View may be detaching
+                        }
+                    }
                 }
             }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    synchronized(windowLock) {
+                        if (snapAnimator === animation) {
+                            snapAnimator = null
+                        }
+                    }
+                }
+            })
             start()
         }
 
-        // Persist new coordinates in preferences
+        // Persist new coordinates in preferences with orientation context
         scope.launch(Dispatchers.IO) {
-            preferences.savePosition(targetX, params.y)
+            preferences.savePosition(
+                targetX,
+                params.y,
+                isAnchoredToRight,
+                bounds.screenWidth,
+                bounds.screenHeight
+            )
         }
     }
 
     override fun onConfigurationChanged() {
-        synchronized(windowLock) {
-            val view = floatingView ?: return
-            val params = layoutParams ?: return
-            if (!isAttached) return
+        handleOrientationOrDisplayChange()
+    }
 
-            dismissPopout()
+    private fun handleOrientationOrDisplayChange() {
+        pendingOrientationCheckRunnable?.let { mainHandler.removeCallbacks(it) }
 
-            val size = buttonSizePx
-            val bounds = getSafeBounds(size)
+        mainHandler.post {
+            synchronized(windowLock) {
+                val view = floatingView ?: return@synchronized
+                val params = layoutParams ?: return@synchronized
+                if (!isAttached) return@synchronized
 
-            if (lastScreenHeight > 0 && lastScreenHeight != bounds.screenHeight) {
-                val relativeY = params.y.toFloat() / lastScreenHeight.toFloat()
-                params.y = (relativeY * bounds.screenHeight).toInt().coerceIn(bounds.minY, bounds.maxY)
-            } else {
-                params.y = params.y.coerceIn(bounds.minY, bounds.maxY)
-            }
+                snapAnimator?.cancel()
+                snapAnimator = null
+                dismissPopout()
 
-            if (currentSettings.snapToEdgeEnabled) {
-                params.x = if (isAnchoredToRight) bounds.maxX else bounds.minX
-            } else {
-                if (lastScreenWidth > 0 && lastScreenWidth != bounds.screenWidth) {
-                    val relativeX = params.x.toFloat() / lastScreenWidth.toFloat()
-                    params.x = (relativeX * bounds.screenWidth).toInt().coerceIn(bounds.minX, bounds.maxX)
+                val size = buttonSizePx
+                val bounds = getSafeBounds(size)
+                if (bounds.screenWidth <= 0 || bounds.screenHeight <= 0) return@synchronized
+
+                // Adapt Y coordinate preserving relative vertical position
+                if (lastScreenHeight > 0 && lastScreenHeight != bounds.screenHeight) {
+                    val relativeY = params.y.toFloat() / lastScreenHeight.toFloat()
+                    params.y = (relativeY * bounds.screenHeight).toInt().coerceIn(bounds.minY, bounds.maxY)
                 } else {
-                    params.x = params.x.coerceIn(bounds.minX, bounds.maxX)
+                    params.y = params.y.coerceIn(bounds.minY, bounds.maxY)
                 }
-            }
 
-            lastScreenWidth = bounds.screenWidth
-            lastScreenHeight = bounds.screenHeight
-
-            try {
-                windowManager.updateViewLayout(view, params)
-                scope.launch(Dispatchers.IO) {
-                    preferences.savePosition(params.x, params.y)
+                // Adapt X coordinate based on edge anchor or relative ratio
+                if (currentSettings.snapToEdgeEnabled) {
+                    params.x = if (isAnchoredToRight) bounds.maxX else bounds.minX
+                } else {
+                    if (lastScreenWidth > 0 && lastScreenWidth != bounds.screenWidth) {
+                        val relativeX = params.x.toFloat() / lastScreenWidth.toFloat()
+                        params.x = (relativeX * bounds.screenWidth).toInt().coerceIn(bounds.minX, bounds.maxX)
+                    } else {
+                        params.x = params.x.coerceIn(bounds.minX, bounds.maxX)
+                    }
                 }
-            } catch (e: Exception) {
-                // Layout transition
+
+                // Strict safety constraint: button must NEVER be outside safe bounds
+                params.x = params.x.coerceIn(bounds.minX, bounds.maxX)
+
+                lastScreenWidth = bounds.screenWidth
+                lastScreenHeight = bounds.screenHeight
+
+                try {
+                    windowManager.updateViewLayout(view, params)
+                    scope.launch(Dispatchers.IO) {
+                        preferences.savePosition(
+                            params.x,
+                            params.y,
+                            isAnchoredToRight,
+                            bounds.screenWidth,
+                            bounds.screenHeight
+                        )
+                    }
+                } catch (e: Exception) {
+                    // Layout transition
+                }
             }
         }
+
+        // Secondary settlement pass after system bars finish transition (120ms)
+        val runnable = Runnable {
+            synchronized(windowLock) {
+                if (!isAttached || isUserInteracting) return@synchronized
+                val view = floatingView ?: return@synchronized
+                val params = layoutParams ?: return@synchronized
+                val size = buttonSizePx
+                val latestBounds = getSafeBounds(size)
+
+                if (latestBounds.screenWidth > 0 && latestBounds.screenHeight > 0) {
+                    val targetX = if (currentSettings.snapToEdgeEnabled) {
+                        if (isAnchoredToRight) latestBounds.maxX else latestBounds.minX
+                    } else {
+                        params.x.coerceIn(latestBounds.minX, latestBounds.maxX)
+                    }
+                    val targetY = if (lastScreenHeight > 0 && lastScreenHeight != latestBounds.screenHeight) {
+                        val relY = params.y.toFloat() / lastScreenHeight.toFloat()
+                        (relY * latestBounds.screenHeight).toInt().coerceIn(latestBounds.minY, latestBounds.maxY)
+                    } else {
+                        params.y.coerceIn(latestBounds.minY, latestBounds.maxY)
+                    }
+
+                    if (params.x != targetX || params.y != targetY) {
+                        params.x = targetX
+                        params.y = targetY
+                        lastScreenWidth = latestBounds.screenWidth
+                        lastScreenHeight = latestBounds.screenHeight
+                        try {
+                            windowManager.updateViewLayout(view, params)
+                            scope.launch(Dispatchers.IO) {
+                                preferences.savePosition(
+                                    params.x,
+                                    params.y,
+                                    isAnchoredToRight,
+                                    latestBounds.screenWidth,
+                                    latestBounds.screenHeight
+                                )
+                            }
+                        } catch (e: Exception) {
+                            // Layout transition
+                        }
+                    }
+                }
+            }
+        }
+        pendingOrientationCheckRunnable = runnable
+        mainHandler.postDelayed(runnable, 120)
     }
 
     override fun onScreenTurnedOff() {
@@ -760,13 +901,29 @@ class OverlayManager(
                         val size = buttonSizePx
                         val bounds = getSafeBounds(size)
 
-                        isAnchoredToRight = (pos.x + size / 2) >= (bounds.screenWidth / 2)
+                        isAnchoredToRight = pos.isAnchoredToRight
+
+                        // Preserve relative vertical position if screen height was recorded
+                        params.y = if (pos.lastScreenHeight > 0 && pos.lastScreenHeight != bounds.screenHeight) {
+                            val relY = pos.y.toFloat() / pos.lastScreenHeight.toFloat()
+                            (relY * bounds.screenHeight).toInt().coerceIn(bounds.minY, bounds.maxY)
+                        } else {
+                            pos.y.coerceIn(bounds.minY, bounds.maxY)
+                        }
+
+                        // Restore horizontal position
                         params.x = if (currentSettings.snapToEdgeEnabled) {
                             if (isAnchoredToRight) bounds.maxX else bounds.minX
                         } else {
-                            pos.x.coerceIn(bounds.minX, bounds.maxX)
+                            if (pos.lastScreenWidth > 0 && pos.lastScreenWidth != bounds.screenWidth) {
+                                val relX = pos.x.toFloat() / pos.lastScreenWidth.toFloat()
+                                (relX * bounds.screenWidth).toInt().coerceIn(bounds.minX, bounds.maxX)
+                            } else {
+                                pos.x.coerceIn(bounds.minX, bounds.maxX)
+                            }
                         }
-                        params.y = pos.y.coerceIn(bounds.minY, bounds.maxY)
+                        params.x = params.x.coerceIn(bounds.minX, bounds.maxX)
+
                         lastScreenWidth = bounds.screenWidth
                         lastScreenHeight = bounds.screenHeight
                         try {

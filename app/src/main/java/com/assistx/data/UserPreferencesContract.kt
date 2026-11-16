@@ -49,6 +49,15 @@ interface UserPreferencesContract {
     suspend fun setDesiredEnabled(enabled: Boolean)
     suspend fun setPausedForPayments(paused: Boolean)
     suspend fun savePosition(x: Int, y: Int)
+    suspend fun savePosition(
+        x: Int,
+        y: Int,
+        isAnchoredToRight: Boolean,
+        screenWidth: Int,
+        screenHeight: Int
+    ) {
+        savePosition(x, y)
+    }
     suspend fun updateSettings(settings: OverlaySettings)
     suspend fun setButtonSizeDp(sizeDp: Int)
     suspend fun setIdleOpacityPercent(opacityPercent: Int)
