@@ -29,6 +29,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -235,6 +236,17 @@ class StudioViewModelTest {
         assertEquals(com.assistx.util.AppIconVariant.CYAN, com.assistx.util.AppIconVariant.fromId("CYAN"))
         assertEquals(com.assistx.util.AppIconVariant.MONOCHROME, com.assistx.util.AppIconVariant.fromId("MONOCHROME"))
         assertEquals(com.assistx.util.AppIconVariant.VIOLET, com.assistx.util.AppIconVariant.fromId("UNKNOWN_ID"))
+    }
+
+    @Test
+    fun testPopoutPaymentPausePreference() = testScope.runTest {
+        assertTrue(userPreferences.internalSettingsFlow.value.showPaymentPauseInPopout)
+        viewModel.updateShowPaymentPauseInPopout(false)
+        advanceUntilIdle()
+        assertFalse(userPreferences.internalSettingsFlow.value.showPaymentPauseInPopout)
+        viewModel.updateShowPaymentPauseInPopout(true)
+        advanceUntilIdle()
+        assertTrue(userPreferences.internalSettingsFlow.value.showPaymentPauseInPopout)
     }
 }
 

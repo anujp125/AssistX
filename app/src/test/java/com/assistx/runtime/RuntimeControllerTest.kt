@@ -171,6 +171,10 @@ class FakeUserPreferences : UserPreferencesContract {
     override suspend fun setAppIconVariant(variant: String) {
         internalSettingsFlow.value = internalSettingsFlow.value.copy(appIconVariant = variant)
     }
+
+    override suspend fun setShowPaymentPauseInPopout(enabled: Boolean) {
+        internalSettingsFlow.value = internalSettingsFlow.value.copy(showPaymentPauseInPopout = enabled)
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

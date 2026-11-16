@@ -33,6 +33,7 @@ import com.assistx.state.StateCoordinator
 import com.assistx.ui.floating.AccessibilityRequiredOverlayDialog
 import com.assistx.ui.floating.ActionPopoutView
 import com.assistx.ui.floating.FloatingButtonView
+import com.assistx.ui.floating.PaymentSafetyOverlayDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -76,6 +77,14 @@ class OverlayManager(
 
     val isAccessibilityDialogShowing: Boolean
         get() = accessibilityDialogView != null
+
+    private var paymentSafetyDialogView: PaymentSafetyOverlayDialog? = null
+    private var paymentSafetyDialogLayoutParams: WindowManager.LayoutParams? = null
+
+    val isPaymentSafetyDialogShowing: Boolean
+        get() = paymentSafetyDialogView != null
+
+    var onPauseForPaymentsRequested: (() -> Unit)? = null
 
     private val effectiveA11yManager: AccessibilityStateManagerContract by lazy {
         accessibilityStateManager ?: AccessibilityStateManager(
@@ -426,6 +435,10 @@ class OverlayManager(
             // Ignore
         }
 
+        dismissPaymentSafetyDialog()
+        dismissAccessibilityDialog()
+        dismissPopout()
+
         if (!isAttached || floatingView == null) {
             stateCoordinator.updateOverlayState(OverlayState.DETACHED)
             return@synchronized true
@@ -527,6 +540,7 @@ class OverlayManager(
                 itemSpacingDp = currentSettings.popoutItemSpacingDp,
                 marginDp = currentSettings.popoutMarginDp,
                 order = currentSettings.popoutOrder,
+                showPaymentPause = currentSettings.showPaymentPauseInPopout,
                 capsuleEnabled = currentSettings.capsuleEnabled,
                 capsuleStyle = currentSettings.capsuleStyle,
                 capsuleCornerRadius = currentSettings.capsuleCornerRadius,
@@ -558,6 +572,13 @@ class OverlayManager(
                     effectiveActionDispatcher.dispatch(AssistAction.POWER_DIALOG, context) {
                         showAccessibilityRequiredDialog()
                     }
+                }
+
+                override fun onPaymentPauseClicked() {
+                    dismissPopout()
+                    floatingView?.postDelayed({
+                        showPaymentSafetyDialog()
+                    }, 100)
                 }
 
                 override fun onDismissRequested() {
@@ -655,6 +676,72 @@ class OverlayManager(
         } finally {
             accessibilityDialogView = null
             accessibilityDialogLayoutParams = null
+        }
+    }
+
+    /**
+     * Displays the Metro-styled Payment Safety double-approval overlay dialog.
+     * Prevents duplicate dialogs if already visible.
+     */
+    fun showPaymentSafetyDialog() = synchronized(windowLock) {
+        if (!isAttached) return@synchronized
+        if (paymentSafetyDialogView != null) return@synchronized // Guard against duplicates
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            },
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.CENTER
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            }
+        }
+
+        val dialog = PaymentSafetyOverlayDialog(
+            context = context,
+            onConfirmPause = {
+                dismissPaymentSafetyDialog()
+                onPauseForPaymentsRequested?.invoke()
+            },
+            onCancel = {
+                dismissPaymentSafetyDialog()
+            }
+        )
+
+        try {
+            windowManager.addView(dialog, params)
+            paymentSafetyDialogView = dialog
+            paymentSafetyDialogLayoutParams = params
+        } catch (e: Exception) {
+            paymentSafetyDialogView = null
+            paymentSafetyDialogLayoutParams = null
+        }
+    }
+
+    /**
+     * Dismisses the Payment Safety overlay dialog if currently showing.
+     */
+    fun dismissPaymentSafetyDialog() = synchronized(windowLock) {
+        val dialog = paymentSafetyDialogView ?: return@synchronized
+        try {
+            if (dialog.isAttachedToWindow) {
+                windowManager.removeView(dialog)
+            }
+        } catch (e: Exception) {
+            // View might already be detached
+        } finally {
+            paymentSafetyDialogView = null
+            paymentSafetyDialogLayoutParams = null
         }
     }
 

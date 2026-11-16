@@ -101,6 +101,9 @@ class AssistApplication : Application() {
             actionExecutor = AndroidActionExecutor(this)
         )
         overlayManager.failureListener = runtimeController
+        overlayManager.onPauseForPaymentsRequested = {
+            runtimeController.pauseForPayments()
+        }
 
         // 6. Restore saved user state
         runtimeController.restoreStateOnLaunch()

@@ -1340,15 +1340,25 @@ private fun StudioSettingsContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (isCurrentHorizontal) 130.dp else 210.dp)
+                        .height(if (isCurrentHorizontal) 130.dp else 230.dp)
                         .border(1.dp, if (isDark) MetroDarkBorder else Color(0xFFE0E0E0), RectangleShape)
                         .background(if (isDark) MetroDarkTile else Color(0xFFF7F7F7)),
                     contentAlignment = Alignment.Center
                 ) {
-                    val actions = when (settings.popoutOrder.uppercase()) {
+                    val baseActions = when (settings.popoutOrder.uppercase()) {
                         "POWER_VOLUME_SCREENSHOT" -> listOf("POWER", "VOLUME", "SCREENSHOT")
                         "VOLUME_SCREENSHOT_POWER" -> listOf("VOLUME", "SCREENSHOT", "POWER")
+                        "PAUSE_SCREENSHOT_VOLUME_POWER" -> listOf("PAYMENT_PAUSE", "SCREENSHOT", "VOLUME", "POWER")
+                        "POWER_VOLUME_SCREENSHOT_PAUSE" -> listOf("POWER", "VOLUME", "SCREENSHOT", "PAYMENT_PAUSE")
+                        "VOLUME_SCREENSHOT_POWER_PAUSE" -> listOf("VOLUME", "SCREENSHOT", "POWER", "PAYMENT_PAUSE")
                         else -> listOf("SCREENSHOT", "VOLUME", "POWER")
+                    }
+                    val actions = if (settings.showPaymentPauseInPopout && !baseActions.contains("PAYMENT_PAUSE")) {
+                        baseActions + "PAYMENT_PAUSE"
+                    } else if (!settings.showPaymentPauseInPopout) {
+                        baseActions.filter { it != "PAYMENT_PAUSE" }
+                    } else {
+                        baseActions
                     }
 
                     val capsuleShape = when (settings.capsuleCornerRadius.uppercase()) {
@@ -1387,13 +1397,23 @@ private fun StudioSettingsContent(
                         ) {
                             actions.forEach { action ->
                                 val isPower = action == "POWER"
+                                val isPause = action == "PAYMENT_PAUSE"
                                 val iconRes = when (action) {
                                     "SCREENSHOT" -> R.drawable.ic_action_screenshot
                                     "VOLUME" -> R.drawable.ic_action_volume
+                                    "PAYMENT_PAUSE" -> R.drawable.ic_action_pause
                                     else -> R.drawable.ic_action_power
                                 }
-                                val iconTint = if (isPower) Color(0xFFF87171) else MetroWhite
-                                val btnBorderColor = if (isPower) Color(0x60EF4444) else Color(0x35FFFFFF)
+                                val iconTint = when {
+                                    isPower -> Color(0xFFF87171)
+                                    isPause -> Color(0xFFF0A30A)
+                                    else -> MetroWhite
+                                }
+                                val btnBorderColor = when {
+                                    isPower -> Color(0x60EF4444)
+                                    isPause -> Color(0x60F0A30A)
+                                    else -> Color(0x35FFFFFF)
+                                }
                                 val btnSize = (settings.popoutButtonSizeDp * 0.82f).dp
 
                                 Box(
@@ -1420,13 +1440,23 @@ private fun StudioSettingsContent(
                         ) {
                             actions.forEach { action ->
                                 val isPower = action == "POWER"
+                                val isPause = action == "PAYMENT_PAUSE"
                                 val iconRes = when (action) {
                                     "SCREENSHOT" -> R.drawable.ic_action_screenshot
                                     "VOLUME" -> R.drawable.ic_action_volume
+                                    "PAYMENT_PAUSE" -> R.drawable.ic_action_pause
                                     else -> R.drawable.ic_action_power
                                 }
-                                val iconTint = if (isPower) Color(0xFFF87171) else MetroWhite
-                                val btnBorderColor = if (isPower) Color(0x60EF4444) else Color(0x35FFFFFF)
+                                val iconTint = when {
+                                    isPower -> Color(0xFFF87171)
+                                    isPause -> Color(0xFFF0A30A)
+                                    else -> MetroWhite
+                                }
+                                val btnBorderColor = when {
+                                    isPower -> Color(0x60EF4444)
+                                    isPause -> Color(0x60F0A30A)
+                                    else -> Color(0x35FFFFFF)
+                                }
                                 val btnSize = (settings.popoutButtonSizeDp * 0.82f).dp
 
                                 Box(
@@ -1597,7 +1627,38 @@ private fun StudioSettingsContent(
                 )
             }
 
-            // 3.6 Action Buttons Order
+            // 3.6 Pause for Payments Shortcut Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "pause for payments shortcut",
+                        style = MetroTypography.bodyLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = textColor
+                        )
+                    )
+                    Text(
+                        text = "adds a quick shortcut in the popout to safely pause AssistX before making payments",
+                        style = MetroTypography.bodySmall.copy(
+                            color = textColor.copy(alpha = 0.6f),
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+                MetroToggle(
+                    checked = settings.showPaymentPauseInPopout,
+                    onCheckedChange = { isEnabled ->
+                        viewModel?.updateShowPaymentPauseInPopout(isEnabled)
+                    }
+                )
+            }
+
+            // 3.7 Action Buttons Order
             Column {
                 Text(
                     text = "action buttons order",
@@ -1608,12 +1669,20 @@ private fun StudioSettingsContent(
                     )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                val orderOptions = remember {
-                    listOf(
-                        MetroOption("SCREENSHOT_VOLUME_POWER", "shot · vol · power"),
-                        MetroOption("POWER_VOLUME_SCREENSHOT", "power · vol · shot"),
-                        MetroOption("VOLUME_SCREENSHOT_POWER", "vol · shot · power")
-                    )
+                val orderOptions = remember(settings.showPaymentPauseInPopout) {
+                    if (settings.showPaymentPauseInPopout) {
+                        listOf(
+                            MetroOption("SCREENSHOT_VOLUME_POWER", "shot · vol · power · pause"),
+                            MetroOption("PAUSE_SCREENSHOT_VOLUME_POWER", "pause · shot · vol · power"),
+                            MetroOption("POWER_VOLUME_SCREENSHOT", "power · vol · shot · pause")
+                        )
+                    } else {
+                        listOf(
+                            MetroOption("SCREENSHOT_VOLUME_POWER", "shot · vol · power"),
+                            MetroOption("POWER_VOLUME_SCREENSHOT", "power · vol · shot"),
+                            MetroOption("VOLUME_SCREENSHOT_POWER", "vol · shot · power")
+                        )
+                    }
                 }
                 MetroSegmentedPicker(
                     options = orderOptions,
@@ -1816,7 +1885,7 @@ private fun StudioSettingsContent(
                     )
                 )
                 Text(
-                    text = "tapping pause below cleanly removes the floating overlay and turns off AssistX's accessibility service before you make a payment. you will need to re-enable accessibility in Android settings when you are finished.",
+                    text = "tapping pause below or using the action popout shortcut cleanly removes the floating overlay and turns off AssistX's accessibility service before you make a payment. you will need to re-enable accessibility in Android settings when you are finished.",
                     style = MetroTypography.bodySmall.copy(
                         color = textColor.copy(alpha = 0.55f),
                         fontSize = 12.sp,

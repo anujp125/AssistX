@@ -26,6 +26,7 @@ data class OverlaySettings(
     val popoutItemSpacingDp: Int = 10,           // 6, 10, 14, 18
     val popoutMarginDp: Int = 12,                // 8, 12, 16, 20
     val popoutOrder: String = "SCREENSHOT_VOLUME_POWER", // SCREENSHOT_VOLUME_POWER, POWER_VOLUME_SCREENSHOT, VOLUME_SCREENSHOT_POWER
+    val showPaymentPauseInPopout: Boolean = true, // Shortcut button in popout to trigger pause for payments
 
     // Popout Background Capsule Element
     val capsuleEnabled: Boolean = false,
@@ -79,6 +80,7 @@ interface UserPreferencesContract {
     suspend fun setPopoutItemSpacingDp(spacingDp: Int)
     suspend fun setPopoutMarginDp(marginDp: Int)
     suspend fun setPopoutOrder(order: String)
+    suspend fun setShowPaymentPauseInPopout(enabled: Boolean)
 
     // Background Capsule Element
     suspend fun setCapsuleEnabled(enabled: Boolean)

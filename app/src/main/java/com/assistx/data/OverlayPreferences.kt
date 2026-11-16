@@ -58,6 +58,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
         private val KEY_POPOUT_ITEM_SPACING_DP = intPreferencesKey("popout_item_spacing_dp")
         private val KEY_POPOUT_MARGIN_DP = intPreferencesKey("popout_margin_dp")
         private val KEY_POPOUT_ORDER = stringPreferencesKey("popout_order")
+        private val KEY_POPOUT_SHOW_PAYMENT_PAUSE = booleanPreferencesKey("popout_show_payment_pause")
 
         // Background Capsule Keys
         private val KEY_CAPSULE_ENABLED = booleanPreferencesKey("capsule_enabled")
@@ -147,6 +148,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             popoutItemSpacingDp = preferences[KEY_POPOUT_ITEM_SPACING_DP] ?: 10,
             popoutMarginDp = preferences[KEY_POPOUT_MARGIN_DP] ?: 12,
             popoutOrder = preferences[KEY_POPOUT_ORDER] ?: "SCREENSHOT_VOLUME_POWER",
+            showPaymentPauseInPopout = preferences[KEY_POPOUT_SHOW_PAYMENT_PAUSE] ?: true,
 
             capsuleEnabled = preferences[KEY_CAPSULE_ENABLED] ?: false,
             capsuleStyle = preferences[KEY_CAPSULE_STYLE] ?: "OBSIDIAN",
@@ -225,6 +227,7 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
             preferences[KEY_POPOUT_ITEM_SPACING_DP] = settings.popoutItemSpacingDp
             preferences[KEY_POPOUT_MARGIN_DP] = settings.popoutMarginDp
             preferences[KEY_POPOUT_ORDER] = settings.popoutOrder
+            preferences[KEY_POPOUT_SHOW_PAYMENT_PAUSE] = settings.showPaymentPauseInPopout
 
             preferences[KEY_CAPSULE_ENABLED] = settings.capsuleEnabled
             preferences[KEY_CAPSULE_STYLE] = settings.capsuleStyle
@@ -329,6 +332,12 @@ class OverlayPreferences(private val context: Context) : UserPreferencesContract
     override suspend fun setPopoutOrder(order: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_POPOUT_ORDER] = order
+        }
+    }
+
+    override suspend fun setShowPaymentPauseInPopout(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_POPOUT_SHOW_PAYMENT_PAUSE] = enabled
         }
     }
 

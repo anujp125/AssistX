@@ -232,6 +232,12 @@ class StudioViewModel(
         }
     }
 
+    fun updateShowPaymentPauseInPopout(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setShowPaymentPauseInPopout(enabled)
+        }
+    }
+
     // Background Capsule Element
     fun updateCapsuleEnabled(enabled: Boolean) {
         viewModelScope.launch {

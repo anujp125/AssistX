@@ -1,4 +1,4 @@
-﻿package com.assistx.ui.floating
+package com.assistx.ui.floating
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -30,6 +30,7 @@ object OverlayBitmapCache {
     fun getPowerBitmap(context: Context): Bitmap? = getBitmap(context, R.drawable.ic_action_power)
     fun getVolumeBitmap(context: Context): Bitmap? = getBitmap(context, R.drawable.ic_action_volume)
     fun getScreenshotBitmap(context: Context): Bitmap? = getBitmap(context, R.drawable.ic_action_screenshot)
+    fun getPauseBitmap(context: Context): Bitmap? = getBitmap(context, R.drawable.ic_action_pause)
 
     fun clear() {
         cache.clear()
